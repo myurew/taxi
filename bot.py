@@ -20,7 +20,7 @@ import queue
 
 # === CONFIG ===
 BOT_TOKEN = os.getenv("BOT_TOKEN", "8297146262:AAG72LEJM2xVds5KDEoB0dJb52iwz8W4_qw")
-ORDER_TIMEOUT = 60
+ORDER_TIMEOUT = 10  # минут
 
 # === BROADCAST QUEUE ===
 BROADCAST_QUEUE = queue.Queue()
@@ -29,7 +29,6 @@ BROADCAST_QUEUE = queue.Queue()
 def init_db():
     conn = sqlite3.connect('taxi.db', check_same_thread=False)
     c = conn.cursor()
-    
     c.execute('''
         CREATE TABLE IF NOT EXISTS users (
             telegram_id INTEGER PRIMARY KEY,
@@ -48,7 +47,6 @@ def init_db():
             registration_date TEXT DEFAULT (datetime('now'))
         )
     ''')
-    
     c.execute('''
         CREATE TABLE IF NOT EXISTS tariffs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -56,7 +54,6 @@ def init_db():
             price REAL NOT NULL
         )
     ''')
-    
     c.execute('''
         CREATE TABLE IF NOT EXISTS trips (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -74,7 +71,6 @@ def init_db():
             driver_message_id INTEGER
         )
     ''')
-    
     c.execute('''
         CREATE TABLE IF NOT EXISTS ratings (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -85,15 +81,13 @@ def init_db():
             created_at TEXT DEFAULT (datetime('now'))
         )
     ''')
-    
     c.execute("INSERT OR IGNORE INTO tariffs (name, price) VALUES ('Эконом', 100.0), ('Стандарт', 200.0), ('Премиум', 300.0)")
-    
     conn.commit()
     return conn
 
 DB = init_db()
 
-# === FLASK DASHBOARD (встроенный, без внешних файлов) ===
+# === FLASK DASHBOARD ===
 DASHBOARD_HTML = '''
 <!DOCTYPE html>
 <html lang="ru">
@@ -230,7 +224,6 @@ DASHBOARD_HTML = '''
     <header>
         <h1>🚕 Служба такси — Админ-панель</h1>
     </header>
-
     <!-- Экран входа -->
     <div id="auth-screen" class="card">
         <h2>🔐 Вход для администратора</h2>
@@ -243,11 +236,9 @@ DASHBOARD_HTML = '''
         <button class="btn-primary" onclick="login()">Войти</button>
         <div id="login-message"></div>
     </div>
-
     <!-- Основной интерфейс -->
     <div id="main-app" class="hidden">
         <button onclick="logout()" style="float: right; margin-bottom: 10px;">🚪 Выйти</button>
-
         <div class="tabs">
             <div class="tab active" data-tab="dashboard">📊 Обзор</div>
             <div class="tab" data-tab="users">👥 Пассажиры</div>
@@ -256,7 +247,6 @@ DASHBOARD_HTML = '''
             <div class="tab" data-tab="tariffs">💰 Тарифы</div>
             <div class="tab" data-tab="broadcast">📢 Рассылка</div>
         </div>
-
         <!-- Вкладка: Обзор -->
         <div class="tab-content active" id="tab-dashboard">
             <div class="stats" id="stats-container"></div>
@@ -276,7 +266,6 @@ DASHBOARD_HTML = '''
             </div>
             <div id="financial-chart" class="card"></div>
         </div>
-
         <!-- Вкладка: Пассажиры -->
         <div class="tab-content" id="tab-users">
             <div class="card">
@@ -295,7 +284,6 @@ DASHBOARD_HTML = '''
                 </table>
             </div>
         </div>
-
         <!-- Вкладка: Водители -->
         <div class="tab-content" id="tab-drivers">
             <div class="card">
@@ -346,7 +334,6 @@ DASHBOARD_HTML = '''
                 </table>
             </div>
         </div>
-
         <!-- Вкладка: Заказы -->
         <div class="tab-content" id="tab-orders">
             <div class="card">
@@ -357,6 +344,8 @@ DASHBOARD_HTML = '''
                             <th>ID</th>
                             <th>Пассажир</th>
                             <th>Водитель</th>
+                            <th>Откуда</th>
+                            <th>Куда</th>
                             <th>Статус</th>
                             <th>Цена</th>
                             <th>Создан</th>
@@ -367,7 +356,6 @@ DASHBOARD_HTML = '''
                 </table>
             </div>
         </div>
-
         <!-- Вкладка: Тарифы -->
         <div class="tab-content" id="tab-tariffs">
             <div class="card">
@@ -392,7 +380,6 @@ DASHBOARD_HTML = '''
                 </table>
             </div>
         </div>
-
         <!-- Вкладка: Рассылка -->
         <div class="tab-content" id="tab-broadcast">
             <div class="card">
@@ -410,18 +397,15 @@ DASHBOARD_HTML = '''
             </div>
         </div>
     </div>
-
     <footer>
         Админ-панель службы такси • Обновлено: <span id="current-date"></span>
     </footer>
 </div>
-
 <script>
     // Утилиты
     const qs = (sel) => document.querySelector(sel);
     const qsa = (sel) => document.querySelectorAll(sel);
     let currentTab = 'dashboard';
-
     // Переключение вкладок
     qsa('.tab').forEach(tab => {
         tab.addEventListener('click', () => {
@@ -434,7 +418,6 @@ DASHBOARD_HTML = '''
             loadTabData(target);
         });
     });
-
     // Загрузка данных по вкладке
     function loadTabData(tabName) {
         if (tabName === 'dashboard') loadDashboard();
@@ -443,7 +426,6 @@ DASHBOARD_HTML = '''
         else if (tabName === 'orders') loadOrders();
         else if (tabName === 'tariffs') loadTariffs();
     }
-
     // Проверка авторизации
     async function checkAuth() {
         try {
@@ -461,7 +443,6 @@ DASHBOARD_HTML = '''
             console.error('Auth check failed:', e);
         }
     }
-
     // Вход
     async function login() {
         const msgEl = qs('#login-message');
@@ -488,12 +469,10 @@ DASHBOARD_HTML = '''
             msgEl.textContent = 'Ошибка подключения';
         }
     }
-
     // Выход
     function logout() {
         fetch('/logout').then(() => checkAuth());
     }
-
     // Универсальный API-вызов
     async function apiCall(url, options = {}) {
         const res = await fetch(url, {
@@ -506,7 +485,6 @@ DASHBOARD_HTML = '''
         }
         return await res.json();
     }
-
     // === DASHBOARD ===
     async function loadDashboard() {
         try {
@@ -538,7 +516,6 @@ DASHBOARD_HTML = '''
                     <h3>${(data.orders.total_stats.total_earnings || 0).toFixed(2)} ₽</h3>
                 </div>
             `;
-
             const topDriversTbody = qs('#top-drivers-table tbody');
             topDriversTbody.innerHTML = data.financial.top_drivers.map(d => `
                 <tr>
@@ -548,28 +525,22 @@ DASHBOARD_HTML = '''
                     <td>${d.total_earnings.toFixed(2)} ₽</td>
                 </tr>
             `).join('');
-            
             loadFinancialChart();
         } catch (e) {
             console.error('Ошибка загрузки дашборда:', e);
         }
     }
-
     async function loadFinancialChart() {
         try {
             const data = await apiCall('/api/financial');
             const container = qs('#financial-chart');
             if (!container) return;
-
             const earnings = data.daily_earnings;
             if (earnings.length === 0) {
                 container.innerHTML = '<p>Нет данных о доходах за последние дни</p>';
                 return;
             }
-
-            // Сортируем по дате (от старых к новым)
             earnings.sort((a, b) => a.day.localeCompare(b.day));
-
             const maxEarnings = Math.max(...earnings.map(e => e.earnings));
             const chartHtml = earnings.map(e => {
                 const height = maxEarnings > 0 ? Math.max(10, (e.earnings / maxEarnings) * 100) : 10;
@@ -583,7 +554,6 @@ DASHBOARD_HTML = '''
                     </div>
                 `;
             }).join('');
-
             container.innerHTML = `
                 <h3>Доход за последние ${earnings.length} дней</h3>
                 <div style="display: flex; justify-content: center; align-items: flex-end; height: 120px; background: #f8fafc; padding: 10px; border-radius: 8px;">
@@ -594,7 +564,6 @@ DASHBOARD_HTML = '''
             console.error('Ошибка загрузки графика:', e);
         }
     }
-
     // === ПАССАЖИРЫ ===
     async function loadPassengers() {
         try {
@@ -619,51 +588,50 @@ DASHBOARD_HTML = '''
             console.error('Ошибка загрузки пассажиров:', e);
         }
     }
-
     // === ВОДИТЕЛИ ===
     async function loadDrivers() {
         try {
             const drivers = await apiCall('/api/drivers');
             const tbody = qs('#drivers-table tbody');
-            tbody.innerHTML = drivers.map(d => `
-                <tr>
-                    <td>${d.user_id}</td>
-                    <td>${d.name || d.first_name || `ID ${d.user_id}`}</td>
-                    <td>
-                        ${d.car_brand || ''} 
-                        ${d.car_model ? ' ' + d.car_model : ''} 
-                        ${d.license_plate ? `(${d.license_plate})` : ''}
-                    </td>
-                    <td>${d.completed_orders}</td>
-                    <td>${(d.total_earnings || 0).toFixed(2)} ₽</td>
-                    <td>${d.avg_rating ? '⭐' + d.avg_rating : '—'}</td>
-                    <td class="actions">
-                        <button class="btn-danger" onclick="deleteDriver(${d.user_id})">Удалить</button>
-                    </td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = drivers.map(d => {
+                const displayName = d.name || d.first_name || `ID ${d.user_id}`;
+                const carInfo = [
+                    d.car_brand,
+                    d.car_model,
+                    d.license_plate ? `(${d.license_plate})` : ''
+                ].filter(Boolean).join(' ');
+                return `
+                    <tr>
+                        <td>${d.user_id}</td>
+                        <td>${displayName}</td>
+                        <td>${carInfo || '—'}</td>
+                        <td>${d.completed_orders}</td>
+                        <td>${(d.total_earnings || 0).toFixed(2)} ₽</td>
+                        <td>${d.avg_rating ? '⭐' + d.avg_rating : '—'}</td>
+                        <td class="actions">
+                            <button class="btn-danger" onclick="deleteDriver(${d.user_id})">Удалить</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         } catch (e) {
             console.error('Ошибка загрузки водителей:', e);
         }
     }
-
     function toggleCreateDriverForm(userId = null) {
         const form = qs('#create-driver-form');
         const title = qs('#form-title');
         if (userId !== null) {
-            // Режим редактирования существующего водителя
             qs('#driver-user-id').value = userId;
             qs('#driver-user-id').readOnly = true;
             title.textContent = `Редактировать водителя ID ${userId}`;
         } else {
-            // Режим создания нового
             qs('#driver-user-id').value = '';
             qs('#driver-user-id').readOnly = false;
             title.textContent = 'Создать водителя из существующего пользователя';
         }
         form.classList.toggle('hidden');
     }
-
     async function createDriver() {
         const userId = parseInt(qs('#driver-user-id').value);
         if (!userId) {
@@ -676,7 +644,7 @@ DASHBOARD_HTML = '''
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     user_id: userId,
-                    driver_: {
+                    driver_data: {
                         name: qs('#driver-name').value,
                         car_brand: qs('#driver-car-brand').value,
                         car_model: qs('#driver-car-model').value,
@@ -695,18 +663,15 @@ DASHBOARD_HTML = '''
             alert('❌ Ошибка: ' + e.message);
         }
     }
-
-    // === НОВАЯ ФУНКЦИЯ: Сделать водителем и открыть форму ===
     async function makeDriver(userId) {
         if (!confirm(`Сделать пользователя ID ${userId} водителем?`)) return;
         try {
-            // Сначала назначаем роль водителя с пустыми данными
             await apiCall('/api/admin/create_driver', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     user_id: userId,
-                    driver_: {
+                    driver_data: {
                         name: '',
                         car_brand: '',
                         car_model: '',
@@ -717,18 +682,12 @@ DASHBOARD_HTML = '''
                     }
                 })
             });
-            
-            // Переключаемся на вкладку водителей
             qsa('.tab').forEach(t => t.classList.remove('active'));
             qs('.tab[data-tab="drivers"]').classList.add('active');
             qsa('.tab-content').forEach(t => t.classList.remove('active'));
             qs('#tab-drivers').classList.add('active');
             currentTab = 'drivers';
-            
-            // Загружаем список водителей
             loadDrivers();
-            
-            // Автоматически открываем форму редактирования
             setTimeout(() => {
                 toggleCreateDriverForm(userId);
             }, 300);
@@ -736,7 +695,6 @@ DASHBOARD_HTML = '''
             alert('❌ Ошибка: ' + e.message);
         }
     }
-
     // === ЗАКАЗЫ ===
     async function loadOrders() {
         try {
@@ -751,53 +709,36 @@ DASHBOARD_HTML = '''
                     case 'cancelled': return 'Отменён';
                     case 'cancelled_by_passenger': return 'Отм. пассажиром';
                     case 'cancelled_by_driver': return 'Отм. водителем';
+                    case 'expired': return 'Авто-отмена';
                     default: return status;
                 }
             };
-            tbody.innerHTML = data.recent_orders.map(o => `
-                <tr>
-                    <td>${o.order_id}</td>
-                    <td>${o.passenger_id}</td>
-                    <td>${o.driver_id || '—'}</td>
-                    <td>${getStatusText(o.status)}</td>
-                    <td>${o.price ? o.price.toFixed(2) + ' ₽' : '—'}</td>
-                    <td>${new Date(o.created_at).toLocaleString('ru-RU')}</td>
-                    <td class="actions">
-                        ${o.status === 'requested' && !o.driver_id ?
-                            `<button class="btn-warning" onclick="assignDriverPrompt(${o.order_id})">Назначить</button>` : ''
-                        }
-                        ${['requested', 'accepted', 'in_progress'].includes(o.status) ?
-                            `<button class="btn-danger" onclick="cancelOrder(${o.order_id})">Отменить</button>` : ''
-                        }
-                    </td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = data.recent_orders.map(o => {
+                const driverDisplay = o.driver_id ?
+                    (o.driver_name + (o.license_plate ? ` (${o.license_plate})` : '')) :
+                    '—';
+                return `
+                    <tr>
+                        <td>${o.order_id}</td>
+                        <td>${o.passenger_id}</td>
+                        <td>${driverDisplay}</td>
+                        <td>${o.from_location || '—'}</td>
+                        <td>${o.to_location || '—'}</td>
+                        <td>${getStatusText(o.status)}</td>
+                        <td>${o.price ? o.price.toFixed(2) + ' ₽' : '—'}</td>
+                        <td>${new Date(o.created_at).toLocaleString('ru-RU')}</td>
+                        <td class="actions">
+                            ${['requested', 'accepted', 'in_progress'].includes(o.status) ?
+                                `<button class="btn-danger" onclick="cancelOrder(${o.order_id})">Отменить</button>` : ''
+                            }
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         } catch (e) {
             console.error('Ошибка загрузки заказов:', e);
         }
     }
-
-    function assignDriverPrompt(orderId) {
-        const driverId = prompt(`Введите Telegram ID водителя для заказа #${orderId}:`);
-        if (driverId && !isNaN(driverId)) {
-            assignDriver(orderId, parseInt(driverId));
-        }
-    }
-
-    async function assignDriver(orderId, driverId) {
-        try {
-            await apiCall('/api/admin/assign_driver', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ order_id: orderId, driver_id: driverId })
-            });
-            alert('✅ Водитель назначен на заказ');
-            loadOrders();
-        } catch (e) {
-            alert('❌ Ошибка назначения: ' + e.message);
-        }
-    }
-
     async function cancelOrder(orderId) {
         if (!confirm(`Вы уверены, что хотите отменить заказ #${orderId}?`)) return;
         try {
@@ -809,10 +750,9 @@ DASHBOARD_HTML = '''
             alert('✅ Заказ отменён');
             loadOrders();
         } catch (e) {
-            alert('❌ Ошибка отмены: ' + e.message);
+            alert('❌ Ошибка: ' + e.message);
         }
     }
-
     // === ТАРИФЫ ===
     async function loadTariffs() {
         try {
@@ -824,7 +764,8 @@ DASHBOARD_HTML = '''
                     <td>${t.name}</td>
                     <td>${t.price.toFixed(2)} ₽</td>
                     <td class="actions">
-                        <button class="btn-danger" onclick="deleteTariff(${t.id})">Удалить</button>
+                        <button class="btn-warning" onclick="editTariff(${t.id}, '${t.name}', ${t.price})">✏️</button>
+                        <button class="btn-danger" onclick="deleteTariff(${t.id})">🗑️</button>
                     </td>
                 </tr>
             `).join('');
@@ -832,7 +773,6 @@ DASHBOARD_HTML = '''
             console.error('Ошибка загрузки тарифов:', e);
         }
     }
-
     async function createTariff() {
         const name = qs('#new-tariff-name').value.trim();
         const price = parseFloat(qs('#new-tariff-price').value);
@@ -854,7 +794,27 @@ DASHBOARD_HTML = '''
             alert('❌ Ошибка: ' + e.message);
         }
     }
-
+    async function editTariff(id, name, price) {
+        const newName = prompt("Название тарифа:", name);
+        const newPrice = prompt("Цена:", price);
+        if (newName === null || newPrice === null) return;
+        const numPrice = parseFloat(newPrice);
+        if (!newName.trim() || isNaN(numPrice)) {
+            alert("Некорректные данные");
+            return;
+        }
+        try {
+            await apiCall(`/api/tariffs/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: newName.trim(), price: numPrice })
+            });
+            alert('✅ Тариф обновлён');
+            loadTariffs();
+        } catch (e) {
+            alert('❌ Ошибка: ' + e.message);
+        }
+    }
     async function deleteTariff(id) {
         if (!confirm('Удалить тариф? Это действие нельзя отменить.')) return;
         try {
@@ -865,7 +825,6 @@ DASHBOARD_HTML = '''
             alert('❌ Ошибка: ' + e.message);
         }
     }
-
     // === РАССЫЛКА ===
     async function sendBroadcast() {
         const message = qs('#broadcast-message').value.trim();
@@ -875,7 +834,6 @@ DASHBOARD_HTML = '''
         }
         const type = document.querySelector('input[name="broadcast-type"]:checked').value;
         let user_ids = [];
-
         try {
             if (type === 'drivers') {
                 const drivers = await apiCall('/api/admin/drivers_for_messaging');
@@ -887,18 +845,15 @@ DASHBOARD_HTML = '''
                 const users = await apiCall('/api/admin/users');
                 user_ids = users.map(u => u.user_id);
             }
-
             if (user_ids.length === 0) {
                 alert('Нет получателей для рассылки');
                 return;
             }
-
             const result = await apiCall('/api/admin/send_message', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_ids, message_text: message })
             });
-
             const resultEl = qs('#broadcast-result');
             resultEl.className = 'message success';
             resultEl.textContent = result.message;
@@ -909,7 +864,6 @@ DASHBOARD_HTML = '''
             resultEl.textContent = '❌ Ошибка: ' + e.message;
         }
     }
-
     // === УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ ===
     async function banUser(id) {
         if (!confirm('Заблокировать пользователя?')) return;
@@ -925,7 +879,6 @@ DASHBOARD_HTML = '''
             alert('❌ Ошибка: ' + e.message);
         }
     }
-
     async function unbanUser(id) {
         try {
             await apiCall('/api/admin/unban', {
@@ -939,7 +892,6 @@ DASHBOARD_HTML = '''
             alert('❌ Ошибка: ' + e.message);
         }
     }
-
     async function deleteDriver(id) {
         if (!confirm('Удалить водителя? Профиль станет пассажиром.')) return;
         try {
@@ -955,7 +907,6 @@ DASHBOARD_HTML = '''
             alert('❌ Ошибка: ' + e.message);
         }
     }
-
     // Инициализация
     document.getElementById('current-date').textContent = new Date().toLocaleDateString('ru-RU');
     checkAuth();
@@ -967,7 +918,6 @@ DASHBOARD_HTML = '''
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(16)
-
 ADMIN_USERNAME = "admin"
 ADMIN_PASSWORD = "admin123"
 
@@ -1001,15 +951,12 @@ def api_dashboard():
     users = cur.execute("SELECT * FROM users").fetchall()
     orders = cur.execute("SELECT * FROM trips").fetchall()
     drivers = [u for u in users if u[3] == 'driver']
-    
     total_stats = {
         "total_orders": len(orders),
         "completed_orders": len([o for o in orders if o[3] == 'completed']),
-        "canceled_orders": len([o for o in orders if o[3] in ('cancelled', 'cancelled_by_passenger', 'cancelled_by_driver')]),
-        "total_earnings": sum(o[6] or 0 for o in orders if o[3] == 'completed')  # Только завершённые
+        "canceled_orders": len([o for o in orders if o[3] in ('cancelled', 'cancelled_by_passenger', 'cancelled_by_driver', 'expired')]),
+        "total_earnings": sum(o[6] or 0 for o in orders if o[3] == 'completed')
     }
-    
-    # Топ водителей
     cur.execute('''
         SELECT u.telegram_id, u.full_name, u.first_name,
                COUNT(t.id) as total_orders,
@@ -1031,7 +978,6 @@ def api_dashboard():
         }
         for d in top_drivers
     ]
-    
     return jsonify({
         "users": {
             "role_stats": {
@@ -1084,7 +1030,6 @@ def api_drivers_for_messaging():
 @app.route('/api/drivers')
 def api_drivers():
     cur = DB.cursor()
-    # Получаем водителей с рейтингом
     cur.execute('''
         SELECT 
             u.telegram_id,
@@ -1097,7 +1042,7 @@ def api_drivers():
             u.license_plate,
             COUNT(t.id) as total_orders,
             SUM(CASE WHEN t.status = 'completed' THEN 1 ELSE 0 END) as completed_orders,
-            SUM(CASE WHEN t.status IN ('cancelled', 'cancelled_by_passenger', 'cancelled_by_driver') THEN 1 ELSE 0 END) as canceled_orders,
+            SUM(CASE WHEN t.status IN ('cancelled', 'cancelled_by_passenger', 'cancelled_by_driver', 'expired') THEN 1 ELSE 0 END) as canceled_orders,
             SUM(CASE WHEN t.status = 'completed' THEN t.fare ELSE 0 END) as total_earnings,
             AVG(r.rating) as avg_rating
         FROM users u
@@ -1126,8 +1071,31 @@ def api_drivers():
 @app.route('/api/orders')
 def api_orders():
     cur = DB.cursor()
-    orders = cur.execute("SELECT * FROM trips ORDER BY created_at DESC LIMIT 50").fetchall()
-    return jsonify({"recent_orders": [{"order_id": o[0], "passenger_id": o[1], "driver_id": o[2], "status": o[3], "from_location": o[4], "to_location": o[5], "price": o[6], "created_at": o[7]} for o in orders]})
+    cur.execute('''
+        SELECT 
+            t.id, t.passenger_id, t.driver_id, t.status, t.pickup, t.destination, t.fare, t.created_at,
+            u.full_name, u.license_plate
+        FROM trips t
+        LEFT JOIN users u ON t.driver_id = u.telegram_id
+        ORDER BY t.created_at DESC
+        LIMIT 50
+    ''')
+    orders = cur.fetchall()
+    return jsonify({"recent_orders": [
+        {
+            "order_id": o[0],
+            "passenger_id": o[1],
+            "driver_id": o[2],
+            "status": o[3],
+            "from_location": o[4],
+            "to_location": o[5],
+            "price": o[6],
+            "created_at": o[7],
+            "driver_name": o[8] or f"ID {o[2]}" if o[2] else None,
+            "license_plate": o[9]
+        }
+        for o in orders
+    ]})
 
 @app.route('/api/tariffs')
 def api_tariffs():
@@ -1150,6 +1118,20 @@ def create_tariff():
     except sqlite3.IntegrityError:
         return jsonify({"success": False, "message": "Тариф с таким названием уже существует"}), 400
 
+@app.route('/api/tariffs/<int:tariff_id>', methods=['PUT'])
+def update_tariff(tariff_id):
+    data = request.get_json()
+    name = data.get('name')
+    price = data.get('price')
+    if not name or price is None:
+        return jsonify({"success": False, "message": "Название и цена обязательны"}), 400
+    cur = DB.cursor()
+    cur.execute("UPDATE tariffs SET name = ?, price = ? WHERE id = ?", (name, price, tariff_id))
+    DB.commit()
+    if cur.rowcount == 0:
+        return jsonify({"success": False, "message": "Тариф не найден"}), 404
+    return jsonify({"success": True, "message": "Тариф обновлён"})
+
 @app.route('/api/tariffs/<int:tariff_id>', methods=['DELETE'])
 def delete_tariff(tariff_id):
     cur = DB.cursor()
@@ -1159,7 +1141,6 @@ def delete_tariff(tariff_id):
         return jsonify({"success": False, "message": "Тариф не найден"}), 404
     return jsonify({"success": True, "message": "Тариф удалён"})
 
-# === ИСПРАВЛЕННЫЙ ФИНАНСОВЫЙ ЭНДПОИНТ ===
 @app.route('/api/financial')
 def api_financial():
     cur = DB.cursor()
@@ -1180,30 +1161,25 @@ def api_financial():
     ]
     return jsonify({"daily_earnings": daily_earnings})
 
-# === BROADCAST ENDPOINT (QUEUE-BASED) ===
 @app.route('/api/admin/send_message', methods=['POST'])
 def api_send_message():
     if 'user_id' not in session:
         return jsonify({"success": False, "message": "Требуется авторизация"}), 401
-
     try:
         data = request.get_json()
         user_ids = data.get('user_ids', [])
         message_text = data.get('message_text', '')
         if not user_ids or not message_text:
             return jsonify({"success": False, "message": "Не указаны получатели или текст"}), 400
-
-        full_message = f"📢 От руководства службы такси:\n\n{message_text}"
+        full_message = f"📢 От руководства службы такси:\n{message_text}"
         BROADCAST_QUEUE.put({
             "user_ids": user_ids,
             "message_text": full_message
         })
-
         return jsonify({
             "success": True,
             "message": f"Рассылка поставлена в очередь для {len(user_ids)} пользователей"
         })
-
     except Exception as e:
         print(f"Ошибка в рассылке: {e}")
         return jsonify({"success": False, "message": "Ошибка сервера"}), 500
@@ -1220,7 +1196,6 @@ def create_driver():
         car_brand = driver_data.get('car_brand')
         car_model = driver_data.get('car_model')
         license_plate = driver_data.get('license_plate')
-        car_color = driver_data.get('car_color')
         contact_phone = driver_data.get('contact_phone')
         payment_phone = driver_data.get('payment_phone')
         bank = driver_data.get('bank')
@@ -1232,13 +1207,12 @@ def create_driver():
                 car_brand = ?,
                 car_model = ?,
                 license_plate = ?,
-                car_color = ?,
                 phone_number = ?,
                 payment_number = ?,
                 bank_name = ?
             WHERE telegram_id = ?
         ''', (
-            full_name, car_brand, car_model, license_plate, car_color,
+            full_name, car_brand, car_model, license_plate,
             contact_phone, payment_phone, bank, user_id
         ))
         DB.commit()
@@ -1249,60 +1223,11 @@ def create_driver():
         print(f"Ошибка при создании водителя: {e}")
         return jsonify({"success": False, "message": "Внутренняя ошибка сервера"}), 500
 
-@app.route('/api/admin/driver/<int:user_id>')
-def api_driver_detail(user_id):
-    cur = DB.cursor()
-    user = cur.execute("SELECT * FROM users WHERE telegram_id = ? AND role = 'driver'", (user_id,)).fetchone()
-    if not user:
-        return jsonify({}), 404
-    orders = cur.execute("SELECT * FROM trips WHERE driver_id = ?", (user_id,)).fetchall()
-    return jsonify({
-        "user_id": user[0],
-        "name": user[8],
-        "first_name": user[2],
-        "username": user[1],
-        "is_banned": bool(user[4]),
-        "car_brand": user[9],
-        "car_model": user[10],
-        "license_plate": user[11],
-        "car_color": user[12],
-        "contact_phone": user[14],  # Исправлено: phone_number — это поле №14 (индекс 10 — car_model!)
-        "payment_phone": user[11],
-        "bank": user[12],
-        "total_orders": len(orders),
-        "completed_orders": len([o for o in orders if o[3] == 'completed']),
-        "canceled_orders": len([o for o in orders if o[3] in ('cancelled', 'cancelled_by_passenger', 'cancelled_by_driver')]),
-        "total_earnings": sum(o[6] or 0 for o in orders if o[3] == 'completed'),
-        "today_earnings": 0,
-        "registration_date": user[13]
-    })
-
-@app.route('/api/admin/passenger/<int:user_id>')
-def api_passenger_detail(user_id):
-    cur = DB.cursor()
-    user = cur.execute("SELECT * FROM users WHERE telegram_id = ?", (user_id,)).fetchone()
-    if not user:
-        return jsonify({}), 404
-    orders = cur.execute("SELECT * FROM trips WHERE passenger_id = ?", (user_id,)).fetchall()
-    return jsonify({
-        "user_id": user[0],
-        "username": user[1],
-        "first_name": user[2],
-        "role": user[3],
-        "is_banned": bool(user[4]),
-        "registration_date": user[13],
-        "total_orders": len(orders),
-        "completed_orders": len([o for o in orders if o[3] == 'completed']),
-        "canceled_orders": len([o for o in orders if o[3] in ('cancelled', 'cancelled_by_passenger', 'cancelled_by_driver')])
-    })
-
-# === MISSING ADMIN ENDPOINTS ===
 @app.route('/api/admin/ban', methods=['POST'])
 def ban_user():
     try:
         data = request.get_json()
         user_id = data.get('user_id')
-        reason = data.get('reason', 'Не указана')
         if not user_id:
             return jsonify({"success": False, "message": "Не указан ID пользователя"}), 400
         cur = DB.cursor()
@@ -1349,30 +1274,11 @@ def delete_driver():
         print(f"Ошибка при удалении водителя: {e}")
         return jsonify({"success": False, "message": "Внутренняя ошибка"}), 500
 
-@app.route('/api/admin/assign_driver', methods=['POST'])
-def assign_driver():
-    try:
-        data = request.get_json()
-        order_id = data.get('order_id')
-        driver_id = data.get('driver_id')
-        if not order_id or not driver_id:
-            return jsonify({"success": False, "message": "Не указан ID заказа или водителя"}), 400
-        cur = DB.cursor()
-        cur.execute("UPDATE trips SET driver_id = ?, status = 'accepted', accepted_at = datetime('now') WHERE id = ? AND status = 'requested'", (driver_id, order_id))
-        DB.commit()
-        if cur.rowcount == 0:
-            return jsonify({"success": False, "message": "Заказ не найден или уже обработан"}), 404
-        return jsonify({"success": True, "message": "Водитель назначен"})
-    except Exception as e:
-        print(f"Ошибка при назначении водителя: {e}")
-        return jsonify({"success": False, "message": "Внутренняя ошибка"}), 500
-
 @app.route('/api/admin/cancel_order', methods=['POST'])
 def cancel_order():
     try:
         data = request.get_json()
         order_id = data.get('order_id')
-        reason = data.get('reason', 'Отменено администратором')
         if not order_id:
             return jsonify({"success": False, "message": "Не указан ID заказа"}), 400
         cur = DB.cursor()
@@ -1445,6 +1351,19 @@ def cancel_trip(trip_id, reason="cancelled"):
     cur = DB.cursor()
     cur.execute("UPDATE trips SET status = ? WHERE id = ?", (reason, trip_id))
     DB.commit()
+    # Удаляем сообщение у пассажира и водителя
+    trip = get_trip(trip_id)
+    if trip:
+        asyncio.create_task(safe_delete_message(trip[1], trip[11]))
+        asyncio.create_task(safe_delete_message(trip[2], trip[12]))
+
+async def safe_delete_message(chat_id, message_id):
+    if not chat_id or not message_id:
+        return
+    try:
+        await bot.delete_message(chat_id=chat_id, message_id=message_id)
+    except Exception as e:
+        print(f"Не удалось удалить сообщение {message_id} у {chat_id}: {e}")
 
 def get_all_drivers():
     cur = DB.cursor()
@@ -1469,12 +1388,12 @@ async def cmd_start(message: types.Message, state: FSMContext):
     save_user(message.from_user.id, message.from_user.username, message.from_user.first_name)
     welcome_text = (
         "Привет! 👋\n"
-        "Ты можешь вызвать такси прямо здесь — в Telegram, без приложений и регистрации!\n\n"
+        "Ты можешь вызвать такси прямо здесь — в Telegram, без приложений и регистрации!\n"
         "✅ Просто напиши, откуда и куда едешь\n"
         "✅ Отменить можно в любой момент\n"
-        "✅ После поездки — оцени водителя\n\n"
+        "✅ После поездки — оцени водителя\n"
         "Все водители проверены: указаны авто, гос. номер, телефон и реквизиты для оплаты.\n"
-        "Без скрытых комиссий. Без задержек. Только комфорт!\n\n"
+        "Без скрытых комиссий. Без задержек. Только комфорт!\n"
         "Нажми «🚕 Вызвать такси» — и поехали! 🚗💨"
     )
     await message.answer(welcome_text, reply_markup=get_passenger_menu())
@@ -1482,8 +1401,8 @@ async def cmd_start(message: types.Message, state: FSMContext):
 @dp.message(Command("contacts"))
 async def cmd_contacts(message: types.Message):
     contact_info = (
-        "Если у вас есть жалоба или предложение, вы можете написать или позвонить по номеру телефона:\n\n"
-        "📞 +7 (XXX) XXX-XX-XX\n\n"
+        "Если у вас есть жалоба или предложение, вы можете написать или позвонить по номеру телефона:\n"
+        "📞 +7 (XXX) XXX-XX-XX\n"
         "Мы всегда рады улучшать нашу службу такси! 🙏"
     )
     await message.answer(contact_info)
@@ -1502,25 +1421,29 @@ async def contacts_button(message: types.Message):
 
 @dp.message(UserState.entering_pickup)
 async def enter_pickup(message: types.Message, state: FSMContext):
+    if not message.text:
+        await message.answer("📍 Пожалуйста, отправьте точку отправления текстом.")
+        return
     await state.update_data(pickup=message.text)
     await message.answer("📍 Отправьте пункт назначения:")
     await state.set_state(UserState.entering_destination)
 
 @dp.message(UserState.entering_destination)
 async def enter_destination(message: types.Message, state: FSMContext):
+    if not message.text:
+        await message.answer("📍 Пожалуйста, отправьте пункт назначения текстом.")
+        return
     data = await state.get_data()
     pickup = data["pickup"]
     destination = message.text
     trip_id = create_trip(message.from_user.id, pickup, destination)
-
     sent_passenger = await message.answer(
-        f"✅ Ваш заказ создан!\nОт: {pickup}\nКуда: {destination}\n\nОжидайте подтверждения от водителя.",
+        f"✅ Ваш заказ создан!\nОт: {pickup}\nКуда: {destination}\nОжидайте подтверждения от водителя.",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="❌ Отменить заказ", callback_data=f"cancel_{trip_id}")]
         ])
     )
     update_passenger_message_id(trip_id, sent_passenger.message_id)
-
     drivers = get_all_drivers()
     if not drivers:
         await message.answer("❌ Нет активных водителей.")
@@ -1528,14 +1451,13 @@ async def enter_destination(message: types.Message, state: FSMContext):
         for (driver_id,) in drivers:
             sent_driver = await bot.send_message(
                 driver_id,
-                f"🚕 Новый заказ!\nОт: {pickup}\nКуда: {destination}\n\nПримите заказ?",
+                f"🚕 Новый заказ!\nОт: {pickup}\nКуда: {destination}\nПримите заказ?",
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                     [InlineKeyboardButton(text="✅ Принять", callback_data=f"accept_{trip_id}")],
                     [InlineKeyboardButton(text="❌ Отклонить", callback_data=f"reject_{trip_id}")]
                 ])
             )
             update_driver_message_id(trip_id, sent_driver.message_id)
-
     await state.clear()
 
 @dp.callback_query(lambda c: c.data.startswith("accept_"))
@@ -1550,18 +1472,15 @@ async def accept_trip(callback: types.CallbackQuery):
             driver_info = f"Водитель: @{callback.from_user.username or callback.from_user.id}"
         trip = get_trip(trip_id)
         try:
-            await bot.send_message(trip[1], f"✅ {driver_info}\n\nПринял ваш заказ!")
+            await bot.send_message(trip[1], f"✅ {driver_info}\nПринял ваш заказ!")
         except:
             pass
-        
-        # Сначала выбор тарифа
         tariffs = get_tariffs()
         kb = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text=f"{name} — {price} ₽", callback_data=f"setfare_{trip_id}_{price}")]
             for _, name, price in tariffs
         ])
         await bot.send_message(callback.from_user.id, "Выберите тариф для поездки:", reply_markup=kb)
-        await update_driver_order_message(trip_id)
         await callback.message.edit_text("✅ Вы приняли заказ! Выберите тариф.")
     else:
         await callback.message.edit_text("⚠️ Заказ уже принят другим водителем.")
@@ -1577,9 +1496,7 @@ async def set_fare(callback: types.CallbackQuery):
     DB.commit()
     trip = get_trip(trip_id)
     passenger_id = trip[1]
-    await bot.send_message(passenger_id, f"💰 Стоимость: {fare} ₽\n\nВодитель скоро приедет!")
-    
-    # Отправляем водителю кнопки времени прибытия
+    await bot.send_message(passenger_id, f"💰 Стоимость: {fare} ₽\nВодитель скоро приедет!")
     time_kb = InlineKeyboardMarkup(inline_keyboard=[
         [
             InlineKeyboardButton(text="5 мин", callback_data=f"eta_{trip_id}_5"),
@@ -1593,8 +1510,6 @@ async def set_fare(callback: types.CallbackQuery):
         ]
     ])
     await bot.send_message(callback.from_user.id, "⏱️ Укажите ориентировочное время прибытия:", reply_markup=time_kb)
-    
-    await update_driver_order_message(trip_id)
     await callback.message.edit_text(f"✅ Стоимость установлена: {fare} ₽")
 
 @dp.callback_query(lambda c: c.data.startswith("eta_"))
@@ -1602,28 +1517,23 @@ async def set_eta(callback: types.CallbackQuery):
     _, trip_id_str, minutes_str = callback.data.split("_")
     trip_id = int(trip_id_str)
     minutes = int(minutes_str)
-    
     trip = get_trip(trip_id)
     if not trip or not trip[1]:
         await callback.answer("Заказ не найден.", show_alert=True)
         return
-
     passenger_id = trip[1]
     text = f"Водитель прибудет на место через {minutes} минут" if minutes != 60 else "Водитель прибудет на место более чем через 30 минут"
-    
     try:
         await bot.send_message(passenger_id, text)
     except:
         pass
-    
-    await callback.message.edit_text(f"✅ Время прибытия отправлено пассажиру.\n\n{text}")
+    await callback.message.edit_text(f"✅ Время прибытия отправлено пассажиру.\n{text}")
     await callback.answer()
 
 @dp.callback_query(lambda c: c.data.startswith("arrived_"))
 async def confirm_arrival(callback: types.CallbackQuery):
     trip_id = int(callback.data.split("_")[1])
     mark_arrived(trip_id)
-    await update_driver_order_message(trip_id)
     trip = get_trip(trip_id)
     try:
         await bot.send_message(trip[1], "🚗 Водитель подтвердил прибытие! Поездка началась.")
@@ -1635,7 +1545,6 @@ async def confirm_arrival(callback: types.CallbackQuery):
 async def complete_ride(callback: types.CallbackQuery):
     trip_id = int(callback.data.split("_")[1])
     complete_trip(trip_id)
-    await update_driver_order_message(trip_id)
     trip = get_trip(trip_id)
     passenger_id = trip[1]
     if trip[11]:
@@ -1677,13 +1586,11 @@ async def rate_driver(callback: types.CallbackQuery):
 
 @dp.callback_query(lambda c: c.data.startswith("cancel_") and not c.data.startswith("cancel_driver_"))
 async def cancel_order(callback: types.CallbackQuery):
-    """Отмена заказа пассажиром"""
     try:
         trip_id = int(callback.data.split("_")[1])
     except (ValueError, IndexError):
         await callback.answer("Некорректный запрос.", show_alert=True)
         return
-
     trip = get_trip(trip_id)
     if not trip or trip[1] != callback.from_user.id:
         await callback.answer("Это не ваш заказ.", show_alert=True)
@@ -1691,42 +1598,23 @@ async def cancel_order(callback: types.CallbackQuery):
     if trip[3] in ("completed", "cancelled", "expired"):
         await callback.answer("Заказ уже завершён.", show_alert=True)
         return
-
     cancel_trip(trip_id, "cancelled_by_passenger")
-    if trip[11]:
-        try:
-            await bot.delete_message(chat_id=callback.from_user.id, message_id=trip[11])
-        except:
-            pass
-    if trip[2]:
-        try:
-            await bot.send_message(trip[2], f"Пассажир отменил заказ #{trip_id}.")
-            await update_driver_order_message(trip_id)
-        except:
-            pass
     await callback.answer("Заказ отменён.")
 
 @dp.callback_query(lambda c: c.data.startswith("cancel_driver_"))
 async def cancel_by_driver(callback: types.CallbackQuery):
-    """Отмена заказа водителем"""
     try:
-        trip_id = int(callback.data.split("_")[2])  # Берём третий элемент
+        trip_id = int(callback.data.split("_")[2])
     except (ValueError, IndexError):
         await callback.answer("Некорректный запрос.", show_alert=True)
         return
-
     cancel_trip(trip_id, "cancelled_by_driver")
-    await update_driver_order_message(trip_id)
     trip = get_trip(trip_id)
-    if trip and trip[11]:
+    if trip and trip[1]:
         try:
-            await bot.delete_message(chat_id=trip[1], message_id=trip[11])
+            await bot.send_message(trip[1], "❌ Водитель отменил ваш заказ.")
         except:
             pass
-    try:
-        await bot.send_message(trip[1], "❌ Водитель отменил ваш заказ.")
-    except:
-        pass
     await callback.answer("Заказ отменён.")
 
 @dp.callback_query(lambda c: c.data.startswith("reject_"))
@@ -1744,7 +1632,8 @@ async def update_passenger_order_message(trip_id):
         "accepted": "✅ Принят водителем",
         "in_progress": "🚗 Водитель в пути",
         "completed": "🏁 Поездка завершена",
-        "cancelled": "❌ Отменён"
+        "cancelled": "❌ Отменён",
+        "expired": "🕒 Авто-отмена"
     }.get(trip[3], trip[3])
     text = f"Ваш заказ:\nОт: {trip[4]}\nКуда: {trip[5]}\nСтатус: {status_text}"
     if trip[6]:
@@ -1771,7 +1660,8 @@ async def update_driver_order_message(trip_id):
         "accepted": "✅ Заказ принят",
         "in_progress": "🚗 В пути",
         "completed": "🏁 Поездка завершена",
-        "cancelled": "❌ Отменён"
+        "cancelled": "❌ Отменён",
+        "expired": "🕒 Авто-отмена"
     }.get(trip[3], "Заказ создан")
     text = f"Ваш заказ:\nОт: {trip[4]}\nКуда: {trip[5]}\nСтатус: {status_text}"
     if trip[6]:
@@ -1798,7 +1688,7 @@ async def update_driver_order_message(trip_id):
     except:
         pass
 
-# === BACKGROUND TASK FOR BROADCASTS ===
+# === BACKGROUND TASKS ===
 async def process_broadcast_queue():
     while True:
         try:
@@ -1825,16 +1715,41 @@ async def process_broadcast_queue():
             print(f"Ошибка в фоновой рассылке: {e}")
             await asyncio.sleep(5)
 
+async def cancel_expired_orders():
+    while True:
+        try:
+            cur = DB.cursor()
+            cur.execute("""
+                SELECT id, passenger_id, passenger_message_id, driver_message_id
+                FROM trips
+                WHERE status = 'requested'
+                  AND datetime(created_at) < datetime('now', '-{} minutes')
+            """.format(ORDER_TIMEOUT))
+            expired = cur.fetchall()
+            for trip_id, passenger_id, p_msg_id, d_msg_id in expired:
+                cancel_trip(trip_id, "expired")
+                try:
+                    await bot.send_message(
+                        passenger_id,
+                        f"🕒 Ваш заказ #{trip_id} автоматически отменён: никто из водителей не принял его в течение {ORDER_TIMEOUT} минут."
+                    )
+                except Exception as e:
+                    print(f"Не удалось отправить уведомление пассажиру {passenger_id}: {e}")
+        except Exception as e:
+            print(f"Ошибка в cancel_expired_orders: {e}")
+        await asyncio.sleep(30)
+
 # === MAIN ===
 def run_flask():
-    app.run(host="127.0.0.1", port=5000, debug=False)
+    app.run(host="0.0.0.0", port=5000, debug=False)
 
 async def main():
     asyncio.create_task(process_broadcast_queue())
+    asyncio.create_task(cancel_expired_orders())
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
     flask_thread = threading.Thread(target=run_flask, daemon=True)
     flask_thread.start()
-    print("🚀 Бот запущен. Дашборд: http://127.0.0.1:5000")
+    print("🚀 Бот и дашборд запущены.")
     asyncio.run(main())
