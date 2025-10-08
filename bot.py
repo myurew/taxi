@@ -979,1022 +979,818 @@ DASHBOARD_HTML = '''
     <meta charset="UTF-8">
     <title>🚕 Такси — Админка</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <style>
-        * { box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background: #f8fafc;
-            color: #1e293b;
+        .sidebar {
+            transition: all 0.3s ease;
         }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
+        .sidebar.collapsed {
+            width: 70px;
         }
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        .tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
-        }
-        .tab {
-            padding: 10px 18px;
-            background: #e2e8f0;
-            cursor: pointer;
-            border-radius: 8px;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-        .tab:hover {
-            background: #cbd5e1;
-        }
-        .tab.active {
-            background: #3b82f6;
-            color: white;
-        }
-        .tab-content {
+        .sidebar.collapsed .nav-text {
             display: none;
         }
-        .tab-content.active {
-            display: block;
+        .main-content {
+            transition: all 0.3s ease;
         }
-        .card {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        .filter-section {
+            transition: all 0.3s ease;
+            overflow: hidden;
         }
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
+        .filter-section.collapsed {
+            max-height: 0;
+            opacity: 0;
         }
-        .stat-card {
-            background: white;
-            padding: 16px;
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-        }
-        .stat-card h3 {
-            margin: 8px 0 4px;
-            font-size: 28px;
-            color: #3b82f6;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 12px 0;
-        }
-        th, td {
-            padding: 12px 10px;
-            text-align: left;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        th {
-            background: #f8fafc;
-            font-weight: 600;
-        }
-        button {
-            padding: 6px 12px;
-            margin: 2px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        .btn-primary { background: #3b82f6; color: white; }
-        .btn-success { background: #10b981; color: white; }
-        .btn-danger { background: #ef4444; color: white; }
-        .btn-warning { background: #f59e0b; color: white; }
-        .form-group {
-            margin: 12px 0;
-        }
-        input, select, textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            font-size: 15px;
-        }
-        .hidden { display: none !important; }
-        .message {
-            padding: 12px;
-            margin: 12px 0;
-            border-radius: 8px;
-        }
-        .message.success { background: #d1fae5; color: #065f46; }
-        .message.error { background: #fee2e2; color: #b91c1c; }
-        .actions { white-space: nowrap; }
-        footer {
-            text-align: center;
-            margin-top: 40px;
-            color: #94a3b8;
-            font-size: 14px;
+        .filter-section.expanded {
+            max-height: 500px;
+            opacity: 1;
         }
     </style>
 </head>
-<body>
-<div class="container">
-    <header>
-        <h1>🚕 Служба такси — Админ-панель</h1>
-    </header>
+<body class="bg-gray-50">
     <!-- Экран входа -->
-    <div id="auth-screen" class="card">
-        <h2>🔐 Вход для администратора</h2>
-        <div class="form-group">
-            <input type="text" id="login-username" placeholder="Логин" value="admin">
+    <div id="auth-screen" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-600 to-purple-700">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="car" class="w-8 h-8 text-blue-600"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-900">Админ-панель Такси</h1>
+                <p class="text-gray-600 mt-2">Войдите в систему управления</p>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Логин</label>
+                    <div class="relative">
+                        <i data-lucide="user" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"></i>
+                        <input type="text" id="login-username" value="admin" 
+                               class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" 
+                               placeholder="Введите логин">
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Пароль</label>
+                    <div class="relative">
+                        <i data-lucide="lock" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"></i>
+                        <input type="password" id="login-password" value="admin123"
+                               class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" 
+                               placeholder="Введите пароль">
+                    </div>
+                </div>
+                
+                <button onclick="login()" 
+                        class="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2">
+                    <i data-lucide="log-in" class="w-5 h-5"></i>
+                    Войти в систему
+                </button>
+            </div>
+            
+            <div id="login-message" class="mt-4"></div>
         </div>
-        <div class="form-group">
-            <input type="password" id="login-password" placeholder="Пароль" value="admin123">
-        </div>
-        <button class="btn-primary" onclick="login()">Войти</button>
-        <div id="login-message"></div>
     </div>
+
     <!-- Основной интерфейс -->
-    <div id="main-app" class="hidden">
-        <button onclick="logout()" style="float: right; margin-bottom: 10px;">🚪 Выйти</button>
-        <div class="tabs">
-            <div class="tab active" data-tab="dashboard">📊 Обзор</div>
-            <div class="tab" data-tab="users">👥 Пассажиры</div>
-            <div class="tab" data-tab="drivers">🚗 Водители</div>
-            <div class="tab" data-tab="orders">📋 Заказы</div>
-            <div class="tab" data-tab="tariffs">💰 Тарифы</div>
-            <div class="tab" data-tab="cancellation-reasons">📝 Причины отмены</div>
-            <div class="tab" data-tab="bans">🚫 Баны</div>
-            <div class="tab" data-tab="broadcast">📢 Рассылка</div>
-        </div>
-        <!-- Вкладка: Обзор -->
-        <div class="tab-content active" id="tab-dashboard">
-            <div class="stats" id="stats-container"></div>
-            <div class="card">
-                <h3>🏆 Топ-5 водителей по заработку</h3>
-                <table id="top-drivers-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Имя</th>
-                            <th>Завершено поездок</th>
-                            <th>Заработок</th>
-                            <th>Рейтинг</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-            <div id="financial-chart" class="card"></div>
-        </div>
-        <!-- Вкладка: Пассажиры -->
-        <div class="tab-content" id="tab-users">
-            <div class="card">
-                <h3>👥 Список пассажиров</h3>
-                <table id="passengers-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Имя</th>
-                            <th>Юзернейм</th>
-                            <th>Заблокирован</th>
-                            <th>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-        <!-- Вкладка: Водители -->
-        <div class="tab-content" id="tab-drivers">
-            <div class="card">
-                <h3>🚗 Управление водителями</h3>
-                <button class="btn-success" onclick="toggleCreateDriverForm()">+ Создать водителя</button>
-                <div id="create-driver-form" class="card hidden" style="margin-top: 16px;">
-                    <h4 id="form-title">Создать водителя из существующего пользователя</h4>
-                    <div class="form-group">
-                        <input type="number" id="driver-user-id" placeholder="Telegram ID пользователя (обязательно)" required readonly>
+    <div id="main-app" class="hidden min-h-screen">
+        <!-- Sidebar -->
+        <div class="sidebar bg-white shadow-xl fixed left-0 top-0 h-full w-64 z-50">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                        <i data-lucide="car" class="w-6 h-6 text-white"></i>
                     </div>
-                    <div class="form-group">
-                        <input type="text" id="driver-name" placeholder="ФИО водителя">
+                    <div>
+                        <h1 class="font-bold text-gray-900">Такси Админ</h1>
+                        <p class="text-xs text-gray-500">Управление системой</p>
                     </div>
-                    <div class="form-group">
-                        <input type="text" id="driver-car-brand" placeholder="Марка автомобиля">
-                    </div>
-                    <div class="form-group">
-                        <input type="text" id="driver-car-model" placeholder="Модель автомобиля">
-                    </div>
-                    <div class="form-group">
-                        <input type="text" id="driver-license-plate" placeholder="Гос. номер">
-                    </div>
-                    <div class="form-group">
-                        <input type="text" id="driver-phone" placeholder="Контактный телефон">
-                    </div>
-                    <div class="form-group">
-                        <input type="text" id="driver-payment" placeholder="Номер для оплаты (СБП/номер карты)">
-                    </div>
-                    <div class="form-group">
-                        <input type="text" id="driver-bank" placeholder="Банк">
-                    </div>
-                    <button class="btn-success" onclick="createDriver()">Сохранить данные водителя</button>
-                    <button type="button" onclick="toggleCreateDriverForm()">Отмена</button>
                 </div>
-                <table id="drivers-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Имя</th>
-                            <th>Авто</th>
-                            <th>Заказов</th>
-                            <th>Заработок</th>
-                            <th>Рейтинг</th>
-                            <th>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
             </div>
-        </div>
-        <!-- Вкладка: Заказы -->
-        <div class="tab-content" id="tab-orders">
-            <div class="card">
-                <h3>📋 Последние 50 заказов</h3>
-                <table id="orders-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Пассажир</th>
-                            <th>Водитель</th>
-                            <th>Откуда</th>
-                            <th>Куда</th>
-                            <th>Статус</th>
-                            <th>Цена</th>
-                            <th>Создан</th>
-                            <th>Причина отмены</th>
-                            <th>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-        <!-- Вкладка: Тарифы -->
-        <div class="tab-content" id="tab-tariffs">
-            <div class="card">
-                <h3>💰 Управление тарифы</h3>
-                <div class="form-group">
-                    <input type="text" id="new-tariff-name" placeholder="Название тарифа (например, 'Эконом')">
-                </div>
-                <div class="form-group">
-                    <input type="number" step="0.01" id="new-tariff-price" placeholder="Цена в рублях">
-                </div>
-                <button class="btn-success" onclick="createTariff()">Добавить тариф</button>
-                <table id="tariffs-table" style="margin-top: 20px;">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Название</th>
-                            <th>Цена</th>
-                            <th>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-        <!-- Вкладка: Причины отмены -->
-        <div class="tab-content" id="tab-cancellation-reasons">
-            <div class="card">
-                <h3>📝 Управление причинами отмены</h3>
-                <div class="form-group">
-                    <label>Тип пользователя:</label>
-                    <select id="reason-user-type">
-                        <option value="driver">Водитель</option>
-                        <option value="passenger">Пассажир</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <input type="text" id="new-reason-text" placeholder="Текст причины отмены">
-                </div>
-                <button class="btn-success" onclick="addCancellationReason()">Добавить причину</button>
+
+            <nav class="p-4 space-y-2">
+                <a href="#" data-tab="dashboard" class="nav-item flex items-center gap-3 p-3 rounded-xl text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                    <span class="nav-text font-medium">Обзор системы</span>
+                </a>
                 
-                <h4 style="margin-top: 20px;">Список причин</h4>
-                <table id="cancellation-reasons-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Тип</th>
-                            <th>Текст</th>
-                            <th>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-        <!-- Вкладка: Баны -->
-        <div class="tab-content" id="tab-bans">
-            <div class="card">
-                <h3>🚫 Управление банами</h3>
-                <div class="form-group">
-                    <input type="number" id="ban-user-id" placeholder="ID пользователя">
-                </div>
-                <div class="form-group">
-                    <input type="text" id="ban-reason" placeholder="Причина бана">
-                </div>
-                <div class="form-group">
-                    <label>Длительность бана:</label>
-                    <select id="ban-duration">
-                        <option value="1">1 день</option>
-                        <option value="3">3 дня</option>
-                        <option value="7">7 дней</option>
-                        <option value="30">30 дней</option>
-                        <option value="">Навсегда</option>
-                    </select>
-                </div>
-                <button class="btn-danger" onclick="banUserAdmin()">Забанить</button>
+                <a href="#" data-tab="users" class="nav-item flex items-center gap-3 p-3 rounded-xl text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200">
+                    <i data-lucide="users" class="w-5 h-5"></i>
+                    <span class="nav-text font-medium">Пассажиры</span>
+                </a>
                 
-                <h4 style="margin-top: 20px;">Активные баны</h4>
-                <table id="bans-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Пользователь</th>
-                            <th>Причина</th>
-                            <th>До</th>
-                            <th>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
+                <a href="#" data-tab="drivers" class="nav-item flex items-center gap-3 p-3 rounded-xl text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200">
+                    <i data-lucide="steering-wheel" class="w-5 h-5"></i>
+                    <span class="nav-text font-medium">Водители</span>
+                </a>
+                
+                <a href="#" data-tab="orders" class="nav-item flex items-center gap-3 p-3 rounded-xl text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200">
+                    <i data-lucide="clipboard-list" class="w-5 h-5"></i>
+                    <span class="nav-text font-medium">Заказы</span>
+                </a>
+                
+                <a href="#" data-tab="tariffs" class="nav-item flex items-center gap-3 p-3 rounded-xl text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200">
+                    <i data-lucide="credit-card" class="w-5 h-5"></i>
+                    <span class="nav-text font-medium">Тарифы</span>
+                </a>
+                
+                <a href="#" data-tab="cancellation-reasons" class="nav-item flex items-center gap-3 p-3 rounded-xl text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200">
+                    <i data-lucide="file-text" class="w-5 h-5"></i>
+                    <span class="nav-text font-medium">Причины отмены</span>
+                </a>
+                
+                <a href="#" data-tab="bans" class="nav-item flex items-center gap-3 p-3 rounded-xl text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200">
+                    <i data-lucide="shield-alert" class="w-5 h-5"></i>
+                    <span class="nav-text font-medium">Баны</span>
+                </a>
+                
+                <a href="#" data-tab="broadcast" class="nav-item flex items-center gap-3 p-3 rounded-xl text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200">
+                    <i data-lucide="megaphone" class="w-5 h-5"></i>
+                    <span class="nav-text font-medium">Рассылка</span>
+                </a>
+            </nav>
+
+            <div class="absolute bottom-4 left-4 right-4">
+                <button onclick="logout()" class="w-full flex items-center gap-3 p-3 rounded-xl text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-200">
+                    <i data-lucide="log-out" class="w-5 h-5"></i>
+                    <span class="font-medium">Выйти</span>
+                </button>
             </div>
         </div>
-        <!-- Вкладка: Рассылка -->
-        <div class="tab-content" id="tab-broadcast">
-            <div class="card">
-                <h3>📢 Массовая рассылка</h3>
-                <div class="form-group">
-                    <label><input type="radio" name="broadcast-type" value="drivers" checked> Водителям</label>
-                    <label><input type="radio" name="broadcast-type" value="passengers"> Пассажирам</label>
-                    <label><input type="radio" name="broadcast-type" value="all"> Всем пользователям</label>
+
+        <!-- Main Content -->
+        <div class="main-content ml-64 p-6">
+            <!-- Dashboard Tab -->
+            <div class="tab-content active" id="tab-dashboard">
+                <div class="mb-8">
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">Обзор системы</h1>
+                    <p class="text-gray-600">Статистика и ключевые показатели вашего такси-сервиса</p>
                 </div>
-                <div class="form-group">
-                    <textarea id="broadcast-message" placeholder="Введите текст сообщения..." rows="5"></textarea>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" id="stats-container">
+                    <!-- Stats will be loaded here -->
                 </div>
-                <button class="btn-primary" onclick="sendBroadcast()">Отправить рассылку</button>
-                <div id="broadcast-result"></div>
+
+                <!-- Charts and Top Drivers -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Financial Chart -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-lg font-semibold text-gray-900">Доход за последние 7 дней</h3>
+                            <i data-lucide="trending-up" class="w-5 h-5 text-green-500"></i>
+                        </div>
+                        <div id="financial-chart"></div>
+                    </div>
+
+                    <!-- Top Drivers -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-lg font-semibold text-gray-900">Топ-5 водителей</h3>
+                            <i data-lucide="trophy" class="w-5 h-5 text-yellow-500"></i>
+                        </div>
+                        <div class="overflow-hidden">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="border-b border-gray-200">
+                                        <th class="text-left py-3 text-sm font-semibold text-gray-600">Водитель</th>
+                                        <th class="text-right py-3 text-sm font-semibold text-gray-600">Поездки</th>
+                                        <th class="text-right py-3 text-sm font-semibold text-gray-600">Заработок</th>
+                                        <th class="text-right py-3 text-sm font-semibold text-gray-600">Рейтинг</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="top-drivers-table">
+                                    <!-- Top drivers will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Other tabs will be loaded here with similar structure -->
+            <div id="other-tabs-content">
+                <!-- Other tab contents will be dynamically loaded -->
             </div>
         </div>
     </div>
-    <footer>
-        Админ-панель службы такси • Обновлено: <span id="current-date"></span>
-    </footer>
-</div>
-<script>
-    const qs = (sel) => document.querySelector(sel);
-    const qsa = (sel) => document.querySelectorAll(sel);
-    let currentTab = 'dashboard';
-    qsa('.tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            qsa('.tab').forEach(t => t.classList.remove('active'));
-            qsa('.tab-content').forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            const target = tab.dataset.tab;
-            qs(`#tab-${target}`).classList.add('active');
-            currentTab = target;
-            loadTabData(target);
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        const qs = (sel) => document.querySelector(sel);
+        const qsa = (sel) => document.querySelectorAll(sel);
+        let currentTab = 'dashboard';
+
+        // Navigation
+        qsa('.nav-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const target = item.dataset.tab;
+                switchTab(target);
+            });
         });
-    });
-    function loadTabData(tabName) {
-        if (tabName === 'dashboard') loadDashboard();
-        else if (tabName === 'users') loadPassengers();
-        else if (tabName === 'drivers') loadDrivers();
-        else if (tabName === 'orders') loadOrders();
-        else if (tabName === 'tariffs') loadTariffs();
-        else if (tabName === 'cancellation-reasons') loadCancellationReasons();
-        else if (tabName === 'bans') loadBans();
-    }
-    async function checkAuth() {
-        try {
-            const res = await fetch('/check_auth');
-            const data = await res.json();
-            if (data.logged_in) {
-                qs('#auth-screen').classList.add('hidden');
-                qs('#main-app').classList.remove('hidden');
+
+        function switchTab(tabName) {
+            // Update active nav item
+            qsa('.nav-item').forEach(item => {
+                item.classList.remove('bg-blue-50', 'text-blue-600');
+                if (item.dataset.tab === tabName) {
+                    item.classList.add('bg-blue-50', 'text-blue-600');
+                }
+            });
+
+            // Load tab content
+            currentTab = tabName;
+            loadTabData(tabName);
+        }
+
+        function loadTabData(tabName) {
+            if (tabName === 'dashboard') {
                 loadDashboard();
             } else {
-                qs('#main-app').classList.add('hidden');
+                // Load other tabs dynamically
+                fetch(`/api/tab/${tabName}`)
+                    .then(response => response.text())
+                    .then(html => {
+                        document.getElementById('other-tabs-content').innerHTML = html;
+                        initializeTabScripts(tabName);
+                    });
+            }
+        }
+
+        function initializeTabScripts(tabName) {
+            switch(tabName) {
+                case 'users':
+                    loadPassengers();
+                    break;
+                case 'drivers':
+                    loadDrivers();
+                    break;
+                case 'orders':
+                    loadOrders();
+                    initializeFilters();
+                    break;
+                case 'tariffs':
+                    loadTariffs();
+                    break;
+                case 'cancellation-reasons':
+                    loadCancellationReasons();
+                    break;
+                case 'bans':
+                    loadBans();
+                    break;
+                case 'broadcast':
+                    // Broadcast scripts will be initialized
+                    break;
+            }
+        }
+
+        // Auth functions
+        async function checkAuth() {
+            try {
+                const res = await fetch('/check_auth');
+                const data = await res.json();
+                if (data.logged_in) {
+                    qs('#auth-screen').classList.add('hidden');
+                    qs('#main-app').classList.remove('hidden');
+                    loadDashboard();
+                } else {
+                    qs('#main-app').classList.add('hidden');
+                    qs('#auth-screen').classList.remove('hidden');
+                }
+            } catch (e) {
+                console.error('Auth check failed:', e);
+            }
+        }
+
+        async function login() {
+            const msgEl = qs('#login-message');
+            msgEl.className = 'text-center p-3 rounded-lg';
+            
+            try {
+                const res = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: qs('#login-username').value,
+                        password: qs('#login-password').value
+                    })
+                });
+                
+                if (res.ok) {
+                    msgEl.className = 'text-center p-3 rounded-lg bg-green-50 text-green-700';
+                    msgEl.innerHTML = '<div class="flex items-center justify-center gap-2"><i data-lucide="check-circle" class="w-5 h-5"></i> Успешный вход!</div>';
+                    setTimeout(checkAuth, 1000);
+                } else {
+                    msgEl.className = 'text-center p-3 rounded-lg bg-red-50 text-red-700';
+                    msgEl.innerHTML = '<div class="flex items-center justify-center gap-2"><i data-lucide="alert-circle" class="w-5 h-5"></i> Неверный логин или пароль</div>';
+                }
+            } catch (e) {
+                msgEl.className = 'text-center p-3 rounded-lg bg-red-50 text-red-700';
+                msgEl.innerHTML = '<div class="flex items-center justify-center gap-2"><i data-lucide="wifi-off" class="w-5 h-5"></i> Ошибка подключения</div>';
+            }
+            lucide.createIcons();
+        }
+
+        function logout() {
+            fetch('/logout').then(() => {
                 qs('#auth-screen').classList.remove('hidden');
-            }
-        } catch (e) {
-            console.error('Auth check failed:', e);
-        }
-    }
-    async function login() {
-        const msgEl = qs('#login-message');
-        msgEl.className = 'message';
-        try {
-            const res = await fetch('/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username: qs('#login-username').value,
-                    password: qs('#login-password').value
-                })
+                qs('#main-app').classList.add('hidden');
             });
-            if (res.ok) {
-                msgEl.className = 'message success';
-                msgEl.textContent = '✅ Успешный вход!';
-                setTimeout(checkAuth, 500);
-            } else {
-                msgEl.className = 'message error';
-                msgEl.textContent = '❌ Неверный логин или пароль';
+        }
+
+        // API functions
+        async function apiCall(url, options = {}) {
+            const res = await fetch(url, {
+                ...options,
+                credentials: 'same-origin'
+            });
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error(`HTTP ${res.status}: ${text}`);
             }
-        } catch (e) {
-            msgEl.className = 'message error';
-            msgEl.textContent = 'Ошибка подключения';
+            return await res.json();
         }
-    }
-    function logout() {
-        fetch('/logout').then(() => checkAuth());
-    }
-    async function apiCall(url, options = {}) {
-        const res = await fetch(url, {
-            ...options,
-            credentials: 'same-origin'
-        });
-        if (!res.ok) {
-            const text = await res.text();
-            throw new Error(`HTTP ${res.status}: ${text}`);
-        }
-        return await res.json();
-    }
-    async function loadDashboard() {
-        try {
-            const data = await apiCall('/api/dashboard');
-            const statsContainer = qs('#stats-container');
-            statsContainer.innerHTML = `
-                <div class="stat-card">
-                    <div>Пассажиры</div>
-                    <h3>${data.users.role_stats.passenger}</h3>
-                </div>
-                <div class="stat-card">
-                    <div>Водители</div>
-                    <h3>${data.users.role_stats.driver}</h3>
-                </div>
-                <div class="stat-card">
-                    <div>Всего заказов</div>
-                    <h3>${data.orders.total_stats.total_orders}</h3>
-                </div>
-                <div class="stat-card">
-                    <div>Завершено</div>
-                    <h3>${data.orders.total_stats.completed_orders}</h3>
-                </div>
-                <div class="stat-card">
-                    <div>Отменено</div>
-                    <h3>${data.orders.total_stats.canceled_orders}</h3>
-                </div>
-                <div class="stat-card">
-                    <div>Выручка</div>
-                    <h3>${(data.orders.total_stats.total_earnings || 0).toFixed(2)} ₽</h3>
-                </div>
-            `;
-            const topDriversTbody = qs('#top-drivers-table tbody');
-            topDriversTbody.innerHTML = data.financial.top_drivers.map(d => `
-                <tr>
-                    <td>${d.user_id}</td>
-                    <td>${d.name}</td>
-                    <td>${d.total_orders}</td>
-                    <td>${d.total_earnings.toFixed(2)} ₽</td>
-                    <td>${d.avg_rating ? '⭐' + d.avg_rating : '—'}</td>
-                </tr>
-            `).join('');
-            loadFinancialChart();
-        } catch (e) {
-            console.error('Ошибка загрузки дашборда:', e);
-        }
-    }
-    async function loadFinancialChart() {
-        try {
-            const data = await apiCall('/api/financial');
-            const container = qs('#financial-chart');
-            if (!container) return;
-            const earnings = data.daily_earnings;
-            if (earnings.length === 0) {
-                container.innerHTML = '<p>Нет данных о доходах за последние дни</p>';
-                return;
-            }
-            earnings.sort((a, b) => a.day.localeCompare(b.day));
-            const maxEarnings = Math.max(...earnings.map(e => e.earnings));
-            const chartHtml = earnings.map(e => {
-                const height = maxEarnings > 0 ? Math.max(10, (e.earnings / maxEarnings) * 100) : 10;
-                const dateParts = e.day.split('-');
-                const formattedDate = `${dateParts[2]}.${dateParts[1]}`;
-                return `
-                    <div style="display: flex; flex-direction: column; align-items: center; margin: 0 4px;">
-                        <div style="width: 30px; height: ${height}px; background: #3b82f6; margin-bottom: 4px; border-radius: 4px;"></div>
-                        <small>${formattedDate}</small>
-                        <small>${e.earnings.toFixed(0)} ₽</small>
+
+        // Dashboard functions
+        async function loadDashboard() {
+            try {
+                const data = await apiCall('/api/dashboard');
+                const statsContainer = qs('#stats-container');
+                
+                statsContainer.innerHTML = `
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-medium text-gray-600">Пассажиры</h3>
+                            <i data-lucide="users" class="w-5 h-5 text-blue-500"></i>
+                        </div>
+                        <div class="text-2xl font-bold text-gray-900">${data.users.role_stats.passenger}</div>
+                        <div class="text-sm text-gray-500 mt-1">Всего зарегистрировано</div>
+                    </div>
+                    
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-medium text-gray-600">Водители</h3>
+                            <i data-lucide="steering-wheel" class="w-5 h-5 text-green-500"></i>
+                        </div>
+                        <div class="text-2xl font-bold text-gray-900">${data.users.role_stats.driver}</div>
+                        <div class="text-sm text-gray-500 mt-1">Активные водители</div>
+                    </div>
+                    
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-medium text-gray-600">Всего заказов</h3>
+                            <i data-lucide="clipboard-list" class="w-5 h-5 text-purple-500"></i>
+                        </div>
+                        <div class="text-2xl font-bold text-gray-900">${data.orders.total_stats.total_orders}</div>
+                        <div class="text-sm text-gray-500 mt-1">За все время</div>
+                    </div>
+                    
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-medium text-gray-600">Выручка</h3>
+                            <i data-lucide="credit-card" class="w-5 h-5 text-yellow-500"></i>
+                        </div>
+                        <div class="text-2xl font-bold text-gray-900">${(data.orders.total_stats.total_earnings || 0).toFixed(2)} ₽</div>
+                        <div class="text-sm text-gray-500 mt-1">Общий доход</div>
                     </div>
                 `;
-            }).join('');
-            container.innerHTML = `
-                <h3>Доход за последние ${earnings.length} дней</h3>
-                <div style="display: flex; justify-content: center; align-items: flex-end; height: 120px; background: #f8fafc; padding: 10px; border-radius: 8px;">
-                    ${chartHtml}
-                </div>
-            `;
-        } catch (e) {
-            console.error('Ошибка загрузки графика:', e);
-        }
-    }
-    async function loadPassengers() {
-        try {
-            const passengers = await apiCall('/api/admin/passengers');
-            const tbody = qs('#passengers-table tbody');
-            tbody.innerHTML = passengers.map(p => `
-                <tr>
-                    <td>${p.user_id}</td>
-                    <td>${p.first_name || '—'}</td>
-                    <td>@${p.username || '—'}</td>
-                    <td>${p.is_banned ? '✅' : '—'}</td>
-                    <td class="actions">
-                        ${p.is_banned ?
-                            `<button class="btn-success" onclick="unbanUser(${p.user_id})">Разблокировать</button>` :
-                            `<button class="btn-danger" onclick="showBanModal(${p.user_id})">Заблокировать</button>`
-                        }
-                        <button class="btn-warning" onclick="makeDriver(${p.user_id})">Сделать водителем</button>
-                    </td>
-                </tr>
-            `).join('');
-        } catch (e) {
-            console.error('Ошибка загрузки пассажиров:', e);
-        }
-    }
-    async function loadDrivers() {
-        try {
-            const drivers = await apiCall('/api/drivers');
-            const tbody = qs('#drivers-table tbody');
-            tbody.innerHTML = drivers.map(d => {
-                const displayName = d.name || d.first_name || `ID ${d.user_id}`;
-                const carInfo = [
-                    d.car_brand,
-                    d.car_model,
-                    d.license_plate ? `(${d.license_plate})` : ''
-                ].filter(Boolean).join(' ');
-                return `
-                    <tr>
-                        <td>${d.user_id}</td>
-                        <td>${displayName}</td>
-                        <td>${carInfo || '—'}</td>
-                        <td>${d.completed_orders}</td>
-                        <td>${(d.total_earnings || 0).toFixed(2)} ₽</td>
-                        <td>${d.avg_rating ? '⭐' + d.avg_rating : '—'}</td>
-                        <td class="actions">
-                            ${d.is_banned ?
-                                `<button class="btn-success" onclick="unbanUser(${d.user_id})">Разблокировать</button>` :
-                                `<button class="btn-danger" onclick="showBanModal(${d.user_id})">Заблокировать</button>`
-                            }
-                            <button class="btn-danger" onclick="deleteDriver(${d.user_id})">Удалить</button>
+
+                // Load top drivers
+                const topDriversTbody = qs('#top-drivers-table');
+                topDriversTbody.innerHTML = data.financial.top_drivers.map(d => `
+                    <tr class="border-b border-gray-100 last:border-0">
+                        <td class="py-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                    ${d.name.charAt(0)}
+                                </div>
+                                <div>
+                                    <div class="font-medium text-gray-900">${d.name}</div>
+                                    <div class="text-xs text-gray-500">ID: ${d.user_id}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-3 text-right font-medium text-gray-900">${d.total_orders}</td>
+                        <td class="py-3 text-right font-bold text-green-600">${d.total_earnings.toFixed(2)} ₽</td>
+                        <td class="py-3 text-right">
+                            ${d.avg_rating ? `
+                                <div class="inline-flex items-center gap-1 bg-yellow-50 text-yellow-700 px-2 py-1 rounded-full text-sm">
+                                    <i data-lucide="star" class="w-3 h-3 fill-current"></i>
+                                    ${d.avg_rating}
+                                </div>
+                            ` : '<span class="text-gray-400">—</span>'}
                         </td>
                     </tr>
-                `;
-            }).join('');
-        } catch (e) {
-            console.error('Ошибка загрузки водителей:', e);
+                `).join('');
+
+                loadFinancialChart();
+                lucide.createIcons();
+            } catch (e) {
+                console.error('Ошибка загрузки дашборда:', e);
+            }
         }
-    }
-    function toggleCreateDriverForm(userId = null) {
-        const form = qs('#create-driver-form');
-        const title = qs('#form-title');
-        if (userId !== null) {
-            qs('#driver-user-id').value = userId;
-            qs('#driver-user-id').readOnly = true;
-            title.textContent = `Редактировать водителя ID ${userId}`;
-        } else {
-            qs('#driver-user-id').value = '';
-            qs('#driver-user-id').readOnly = false;
-            title.textContent = 'Создать водителя из существующего пользователя';
-        }
-        form.classList.toggle('hidden');
-    }
-    async function createDriver() {
-        const userId = parseInt(qs('#driver-user-id').value);
-        if (!userId) {
-            alert('Укажите корректный Telegram ID пользователя');
-            return;
-        }
-        try {
-            await apiCall('/api/admin/create_driver', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    user_id: userId,
-                    driver_data: {
-                        name: qs('#driver-name').value,
-                        car_brand: qs('#driver-car-brand').value,
-                        car_model: qs('#driver-car-model').value,
-                        license_plate: qs('#driver-license-plate').value,
-                        contact_phone: qs('#driver-phone').value,
-                        payment_phone: qs('#driver-payment').value,
-                        bank: qs('#driver-bank').value
-                    }
-                })
-            });
-            alert('✅ Данные водителя сохранены!');
-            toggleCreateDriverForm();
-            loadDrivers();
-            if (currentTab === 'users') loadPassengers();
-        } catch (e) {
-            alert('❌ Ошибка: ' + e.message);
-        }
-    }
-    async function makeDriver(userId) {
-        if (!confirm(`Сделать пользователя ID ${userId} водителем?`)) return;
-        try {
-            await apiCall('/api/admin/create_driver', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    user_id: userId,
-                    driver_data: {
-                        name: '',
-                        car_brand: '',
-                        car_model: '',
-                        license_plate: '',
-                        contact_phone: '',
-                        payment_phone: '',
-                        bank: ''
-                    }
-                })
-            });
-            qsa('.tab').forEach(t => t.classList.remove('active'));
-            qs('.tab[data-tab="drivers"]').classList.add('active');
-            qsa('.tab-content').forEach(t => t.classList.remove('active'));
-            qs('#tab-drivers').classList.add('active');
-            currentTab = 'drivers';
-            loadDrivers();
-            setTimeout(() => {
-                toggleCreateDriverForm(userId);
-            }, 300);
-        } catch (e) {
-            alert('❌ Ошибка: ' + e.message);
-        }
-    }
-    async function loadOrders() {
-        try {
-            const data = await apiCall('/api/orders');
-            const tbody = qs('#orders-table tbody');
-            const getStatusText = (status) => {
-                switch(status) {
-                    case 'requested': return 'Ожидает';
-                    case 'accepted': return 'Принят';
-                    case 'in_progress': return 'В пути';
-                    case 'completed': return 'Завершён';
-                    case 'cancelled': return 'Отменён';
-                    case 'cancelled_by_passenger': return 'Отм. пассажиром';
-                    case 'cancelled_by_driver': return 'Отм. водителем';
-                    case 'expired': return 'Авто-отмена';
-                    default: return status;
+
+        async function loadFinancialChart() {
+            try {
+                const data = await apiCall('/api/financial');
+                const container = qs('#financial-chart');
+                
+                if (!container) return;
+                const earnings = data.daily_earnings;
+                
+                if (earnings.length === 0) {
+                    container.innerHTML = '<div class="text-center text-gray-500 py-8"><i data-lucide="bar-chart-3" class="w-12 h-12 mx-auto mb-2 opacity-50"></i><p>Нет данных о доходах</p></div>';
+                    return;
                 }
-            };
-            tbody.innerHTML = data.recent_orders.map(o => {
-                const driverDisplay = o.driver_id ?
-                    (o.driver_name + (o.license_plate ? ` (${o.license_plate})` : '')) :
-                    '—';
-                return `
-                    <tr>
-                        <td>${o.order_id}</td>
-                        <td>${o.passenger_id}</td>
-                        <td>${driverDisplay}</td>
-                        <td>${o.from_location || '—'}</td>
-                        <td>${o.to_location || '—'}</td>
-                        <td>${getStatusText(o.status)}</td>
-                        <td>${o.price ? o.price.toFixed(2) + ' ₽' : '—'}</td>
-                        <td>${new Date(o.created_at).toLocaleString('ru-RU')}</td>
-                        <td>${o.cancellation_reason || '—'}</td>
-                        <td class="actions">
-                            ${['requested', 'accepted', 'in_progress'].includes(o.status) ?
-                                `<button class="btn-danger" onclick="cancelOrder(${o.order_id})">Отменить</button>` : ''
-                            }
-                        </td>
-                    </tr>
+
+                earnings.sort((a, b) => a.day.localeCompare(b.day));
+                const maxEarnings = Math.max(...earnings.map(e => e.earnings));
+                
+                const chartHtml = earnings.map(e => {
+                    const height = maxEarnings > 0 ? Math.max(20, (e.earnings / maxEarnings) * 120) : 20;
+                    const dateParts = e.day.split('-');
+                    const formattedDate = `${dateParts[2]}.${dateParts[1]}`;
+                    
+                    return `
+                        <div class="flex flex-col items-center justify-end h-32">
+                            <div class="w-8 bg-gradient-to-t from-blue-500 to-blue-600 rounded-t-lg transition-all duration-300 hover:from-blue-600 hover:to-blue-700" 
+                                 style="height: ${height}px" 
+                                 title="${e.earnings.toFixed(2)} ₽">
+                            </div>
+                            <div class="mt-2 text-xs text-gray-600 font-medium">${formattedDate}</div>
+                            <div class="text-xs text-gray-500">${e.earnings.toFixed(0)}₽</div>
+                        </div>
+                    `;
+                }).join('');
+
+                container.innerHTML = `
+                    <div class="flex items-end justify-center gap-4 h-40 px-4">
+                        ${chartHtml}
+                    </div>
                 `;
-            }).join('');
-        } catch (e) {
-            console.error('Ошибка загрузки заказов:', e);
-        }
-    }
-    async function cancelOrder(orderId) {
-        if (!confirm(`Вы уверены, что хотите отменить заказ #${orderId}?`)) return;
-        try {
-            await apiCall('/api/admin/cancel_order', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ order_id: orderId })
-            });
-            alert('✅ Заказ отменён');
-            loadOrders();
-        } catch (e) {
-            alert('❌ Ошибка: ' + e.message);
-        }
-    }
-    async function loadTariffs() {
-        try {
-            const tariffs = await apiCall('/api/tariffs');
-            const tbody = qs('#tariffs-table tbody');
-            tbody.innerHTML = tariffs.map(t => `
-                <tr>
-                    <td>${t.id}</td>
-                    <td>${t.name}</td>
-                    <td>${t.price.toFixed(2)} ₽</td>
-                    <td class="actions">
-                        <button class="btn-warning" onclick="editTariff(${t.id}, '${t.name}', ${t.price})">✏️</button>
-                        <button class="btn-danger" onclick="deleteTariff(${t.id})">🗑️</button>
-                    </td>
-                </tr>
-            `).join('');
-        } catch (e) {
-            console.error('Ошибка загрузки тарифов:', e);
-        }
-    }
-    async function createTariff() {
-        const name = qs('#new-tariff-name').value.trim();
-        const price = parseFloat(qs('#new-tariff-price').value);
-        if (!name || isNaN(price)) {
-            alert('Заполните название и цену');
-            return;
-        }
-        try {
-            await apiCall('/api/tariffs', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, price })
-            });
-            alert('✅ Тариф добавлен');
-            qs('#new-tariff-name').value = '';
-            qs('#new-tariff-price').value = '';
-            loadTariffs();
-        } catch (e) {
-            alert('❌ Ошибка: ' + e.message);
-        }
-    }
-    async function editTariff(id, name, price) {
-        const newName = prompt("Название тарифа:", name);
-        const newPrice = prompt("Цена:", price);
-        if (newName === null || newPrice === null) return;
-        const numPrice = parseFloat(newPrice);
-        if (!newName.trim() || isNaN(numPrice)) {
-            alert("Некорректные данные");
-            return;
-        }
-        try {
-            await apiCall(`/api/tariffs/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: newName.trim(), price: numPrice })
-            });
-            alert('✅ Тариф обновлён');
-            loadTariffs();
-        } catch (e) {
-            alert('❌ Ошибка: ' + e.message);
-        }
-    }
-    async function deleteTariff(id) {
-        if (!confirm('Удалить тариф? Это действие нельзя отменить.')) return;
-        try {
-            await apiCall(`/api/tariffs/${id}`, { method: 'DELETE' });
-            alert('✅ Тариф удалён');
-            loadTariffs();
-        } catch (e) {
-            alert('❌ Ошибка: ' + e.message);
-        }
-    }
-    // Управление причинами отмены
-    async function loadCancellationReasons() {
-        try {
-            const reasons = await apiCall('/api/cancellation_reasons?user_type=all');
-            const tbody = qs('#cancellation-reasons-table tbody');
-            tbody.innerHTML = reasons.map(r => `
-                <tr>
-                    <td>${r.id}</td>
-                    <td>${r.user_type === 'driver' ? '🚗 Водитель' : '👤 Пассажир'}</td>
-                    <td>
-                        <input type="text" value="${r.reason_text}" id="reason-${r.id}" 
-                               onchange="updateCancellationReason(${r.id})">
-                    </td>
-                    <td class="actions">
-                        <button class="btn-danger" onclick="deleteCancellationReason(${r.id})">🗑️</button>
-                    </td>
-                </tr>
-            `).join('');
-        } catch (e) {
-            console.error('Ошибка загрузки причин:', e);
-        }
-    }
-    async function addCancellationReason() {
-        const userType = qs('#reason-user-type').value;
-        const reasonText = qs('#new-reason-text').value.trim();
-        
-        if (!reasonText) {
-            alert('Введите текст причины');
-            return;
-        }
-        
-        try {
-            await apiCall('/api/cancellation_reasons', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_type: userType, reason_text: reasonText })
-            });
-            alert('✅ Причина добавлена');
-            qs('#new-reason-text').value = '';
-            loadCancellationReasons();
-        } catch (e) {
-            alert('❌ Ошибка: ' + e.message);
-        }
-    }
-    async function updateCancellationReason(reasonId) {
-        const reasonText = qs(`#reason-${reasonId}`).value.trim();
-        
-        if (!reasonText) {
-            alert('Текст причины не может быть пустым');
-            return;
-        }
-        
-        try {
-            await apiCall(`/api/cancellation_reasons/${reasonId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ reason_text: reasonText })
-            });
-            alert('✅ Причина обновлена');
-        } catch (e) {
-            alert('❌ Ошибка: ' + e.message);
-        }
-    }
-    async function deleteCancellationReason(reasonId) {
-        if (!confirm('Удалить причину?')) return;
-        
-        try {
-            await apiCall(`/api/cancellation_reasons/${reasonId}`, { method: 'DELETE' });
-            alert('✅ Причина удалена');
-            loadCancellationReasons();
-        } catch (e) {
-            alert('❌ Ошибка: ' + e.message);
-        }
-    }
-    // Управление банами
-    async function loadBans() {
-        try {
-            const users = await apiCall('/api/admin/users');
-            const bannedUsers = users.filter(u => u.is_banned);
-            const tbody = qs('#bans-table tbody');
-            
-            tbody.innerHTML = bannedUsers.map(u => `
-                <tr>
-                    <td>${u.user_id}</td>
-                    <td>${u.first_name || u.user_id} @${u.username || ''}</td>
-                    <td>${u.ban_reason || '—'}</td>
-                    <td>${u.banned_until ? new Date(u.banned_until).toLocaleDateString('ru-RU') : 'Навсегда'}</td>
-                    <td class="actions">
-                        <button class="btn-success" onclick="unbanUser(${u.user_id})">Разблокировать</button>
-                    </td>
-                </tr>
-            `).join('');
-        } catch (e) {
-            console.error('Ошибка загрузки банов:', e);
-        }
-    }
-    async function banUserAdmin() {
-        const userId = parseInt(qs('#ban-user-id').value);
-        const reason = qs('#ban-reason').value.trim();
-        const duration = qs('#ban-duration').value;
-        const durationDays = duration ? parseInt(duration) : null;
-        
-        if (!userId || !reason) {
-            alert('Заполните ID пользователя и причину');
-            return;
-        }
-        
-        if (!confirm(`Забанить пользователя ${userId}?`)) return;
-        
-        try {
-            await apiCall('/api/admin/ban_user', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    user_id: userId, 
-                    reason: reason, 
-                    duration_days: durationDays 
-                })
-            });
-            alert('✅ Пользователь забанен');
-            qs('#ban-user-id').value = '';
-            qs('#ban-reason').value = '';
-            loadBans();
-            if (currentTab === 'users') loadPassengers();
-            if (currentTab === 'drivers') loadDrivers();
-        } catch (e) {
-            alert('❌ Ошибка: ' + e.message);
-        }
-    }
-    function showBanModal(userId) {
-        qs('#ban-user-id').value = userId;
-        qs('#ban-reason').value = '';
-        qs('#ban-duration').value = '7';
-        
-        // Переключаем на вкладку банов
-        qsa('.tab').forEach(t => t.classList.remove('active'));
-        qs('.tab[data-tab="bans"]').classList.add('active');
-        qsa('.tab-content').forEach(t => t.classList.remove('active'));
-        qs('#tab-bans').classList.add('active');
-        currentTab = 'bans';
-        loadBans();
-    }
-    async function unbanUser(userId) {
-        if (!confirm(`Разбанить пользователя ${userId}?`)) return;
-        
-        try {
-            await apiCall('/api/admin/unban_user', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: userId })
-            });
-            alert('✅ Пользователь разбанен');
-            loadBans();
-            if (currentTab === 'users') loadPassengers();
-            if (currentTab === 'drivers') loadDrivers();
-        } catch (e) {
-            alert('❌ Ошибка: ' + e.message);
-        }
-    }
-    async function sendBroadcast() {
-        const message = qs('#broadcast-message').value.trim();
-        if (!message) {
-            alert('Введите текст сообщения');
-            return;
-        }
-        const type = document.querySelector('input[name="broadcast-type"]:checked').value;
-        let user_ids = [];
-        try {
-            if (type === 'drivers') {
-                const drivers = await apiCall('/api/admin/drivers_for_messaging');
-                user_ids = drivers.map(d => d.user_id);
-            } else if (type === 'passengers') {
-                const passengers = await apiCall('/api/admin/passengers');
-                user_ids = passengers.map(p => p.user_id);
-            } else {
-                const users = await apiCall('/api/admin/users');
-                user_ids = users.map(u => u.user_id);
+                
+                lucide.createIcons();
+            } catch (e) {
+                console.error('Ошибка загрузки графика:', e);
             }
-            if (user_ids.length === 0) {
-                alert('Нет получателей для рассылки');
-                return;
-            }
-            const result = await apiCall('/api/admin/send_message', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_ids, message_text: message })
-            });
-            const resultEl = qs('#broadcast-result');
-            resultEl.className = 'message success';
-            resultEl.textContent = result.message;
-            qs('#broadcast-message').value = '';
-        } catch (e) {
-            const resultEl = qs('#broadcast-result');
-            resultEl.className = 'message error';
-            resultEl.textContent = '❌ Ошибка: ' + e.message;
         }
-    }
-    async function deleteDriver(id) {
-        if (!confirm('Удалить водителя? Профиль станет пассажиром.')) return;
-        try {
-            await apiCall('/api/admin/delete_driver', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: id })
-            });
-            alert('✅ Водитель удалён');
-            loadDrivers();
-            if (currentTab === 'users') loadPassengers();
-        } catch (e) {
-            alert('❌ Ошибка: ' + e.message);
-        }
-    }
-    document.getElementById('current-date').textContent = new Date().toLocaleDateString('ru-RU');
-    checkAuth();
-    setInterval(checkAuth, 60000);
-</script>
+
+        // Initialize
+        checkAuth();
+        setInterval(checkAuth, 60000);
+        lucide.createIcons();
+    </script>
 </body>
 </html>
 '''
+
+# Новые API endpoints для загрузки контента вкладок
+@app.route('/api/tab/<tab_name>')
+def api_tab_content(tab_name):
+    if tab_name == 'users':
+        return '''
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Управление пассажирами</h1>
+            <p class="text-gray-600">Список всех пассажиров и управление их статусами</p>
+        </div>
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-semibold text-gray-900">Список пассажиров</h3>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="users" class="w-5 h-5 text-gray-400"></i>
+                    <span class="text-sm text-gray-500" id="passengers-count">Загрузка...</span>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-gray-200">
+                            <th class="text-left py-3 text-sm font-semibold text-gray-600">ID</th>
+                            <th class="text-left py-3 text-sm font-semibold text-gray-600">Имя</th>
+                            <th class="text-left py-3 text-sm font-semibold text-gray-600">Юзернейм</th>
+                            <th class="text-left py-3 text-sm font-semibold text-gray-600">Статус</th>
+                            <th class="text-right py-3 text-sm font-semibold text-gray-600">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="passengers-table">
+                        <!-- Passengers will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <script>
+            function loadPassengers() {
+                fetch('/api/admin/passengers')
+                    .then(response => response.json())
+                    .then(passengers => {
+                        const tbody = document.getElementById('passengers-table');
+                        const countElement = document.getElementById('passengers-count');
+                        
+                        countElement.textContent = `${passengers.length} пассажиров`;
+                        
+                        tbody.innerHTML = passengers.map(p => `
+                            <tr class="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                                <td class="py-4">
+                                    <div class="font-mono text-sm text-gray-900">${p.user_id}</div>
+                                </td>
+                                <td class="py-4">
+                                    <div class="font-medium text-gray-900">${p.first_name || '—'}</div>
+                                </td>
+                                <td class="py-4">
+                                    <div class="text-gray-600">@${p.username || '—'}</div>
+                                </td>
+                                <td class="py-4">
+                                    ${p.is_banned ? 
+                                        '<span class="inline-flex items-center gap-1 bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-medium"><i data-lucide="ban" class="w-3 h-3"></i>Заблокирован</span>' : 
+                                        '<span class="inline-flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium"><i data-lucide="check-circle" class="w-3 h-3"></i>Активен</span>'
+                                    }
+                                </td>
+                                <td class="py-4 text-right">
+                                    <div class="flex items-center justify-end gap-2">
+                                        ${p.is_banned ?
+                                            `<button onclick="unbanUser(${p.user_id})" class="flex items-center gap-1 bg-green-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-green-600 transition-colors">
+                                                <i data-lucide="unlock" class="w-4 h-4"></i>
+                                                Разблокировать
+                                            </button>` :
+                                            `<button onclick="showBanModal(${p.user_id})" class="flex items-center gap-1 bg-red-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-600 transition-colors">
+                                                <i data-lucide="ban" class="w-4 h-4"></i>
+                                                Заблокировать
+                                            </button>`
+                                        }
+                                        <button onclick="makeDriver(${p.user_id})" class="flex items-center gap-1 bg-blue-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-600 transition-colors">
+                                            <i data-lucide="user-plus" class="w-4 h-4"></i>
+                                            Водитель
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('');
+                        lucide.createIcons();
+                    });
+            }
+        </script>
+        '''
+    elif tab_name == 'orders':
+        return '''
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Управление заказами</h1>
+            <p class="text-gray-600">Просмотр и управление всеми заказами такси</p>
+        </div>
+
+        <!-- Filters Section -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Фильтры заказов</h3>
+                <button onclick="toggleFilters()" class="flex items-center gap-2 text-blue-600 hover:text-blue-700">
+                    <i data-lucide="filter" class="w-5 h-5"></i>
+                    <span>Фильтры</span>
+                </button>
+            </div>
+            
+            <div id="filters-section" class="filter-section expanded grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Period -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Период</label>
+                    <select id="filter-period" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">Все время</option>
+                        <option value="today">Сегодня</option>
+                        <option value="week">Неделя</option>
+                        <option value="month">Месяц</option>
+                        <option value="custom">Выбрать период</option>
+                    </select>
+                </div>
+                
+                <!-- Driver -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Водитель</label>
+                    <select id="filter-driver" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">Все водители</option>
+                    </select>
+                </div>
+                
+                <!-- Status -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Статус</label>
+                    <select id="filter-status" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">Все статусы</option>
+                        <option value="requested">Ожидает</option>
+                        <option value="accepted">Принят</option>
+                        <option value="in_progress">В пути</option>
+                        <option value="completed">Завершён</option>
+                        <option value="cancelled">Отменён</option>
+                    </select>
+                </div>
+                
+                <!-- Price Range -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Цена</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="filter-price-min" placeholder="Мин" class="w-1/2 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <input type="number" id="filter-price-max" placeholder="Макс" class="w-1/2 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                </div>
+                
+                <!-- From Location -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Откуда</label>
+                    <select id="filter-from" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">Все адреса</option>
+                    </select>
+                </div>
+                
+                <!-- To Location -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Куда</label>
+                    <select id="filter-to" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">Все адреса</option>
+                    </select>
+                </div>
+                
+                <!-- Cancellation Reason -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Причина отмены</label>
+                    <select id="filter-cancellation" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">Все причины</option>
+                    </select>
+                </div>
+                
+                <!-- Actions -->
+                <div class="flex items-end gap-2">
+                    <button onclick="applyFilters()" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+                        <i data-lucide="search" class="w-4 h-4"></i>
+                        Применить
+                    </button>
+                    <button onclick="resetFilters()" class="flex-1 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors flex items-center justify-center gap-2">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                        Сбросить
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orders Table -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-semibold text-gray-900">Последние заказы</h3>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="clipboard-list" class="w-5 h-5 text-gray-400"></i>
+                    <span class="text-sm text-gray-500" id="orders-count">Загрузка...</span>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-gray-200">
+                            <th class="text-left py-3 text-sm font-semibold text-gray-600">ID</th>
+                            <th class="text-left py-3 text-sm font-semibold text-gray-600">Пассажир</th>
+                            <th class="text-left py-3 text-sm font-semibold text-gray-600">Водитель</th>
+                            <th class="text-left py-3 text-sm font-semibold text-gray-600">Откуда</th>
+                            <th class="text-left py-3 text-sm font-semibold text-gray-600">Куда</th>
+                            <th class="text-left py-3 text-sm font-semibold text-gray-600">Статус</th>
+                            <th class="text-right py-3 text-sm font-semibold text-gray-600">Цена</th>
+                            <th class="text-left py-3 text-sm font-semibold text-gray-600">Создан</th>
+                            <th class="text-left py-3 text-sm font-semibold text-gray-600">Причина отмены</th>
+                            <th class="text-right py-3 text-sm font-semibold text-gray-600">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-table">
+                        <!-- Orders will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <script>
+            let filtersVisible = true;
+            
+            function toggleFilters() {
+                const filtersSection = document.getElementById('filters-section');
+                filtersVisible = !filtersVisible;
+                
+                if (filtersVisible) {
+                    filtersSection.classList.remove('collapsed');
+                    filtersSection.classList.add('expanded');
+                } else {
+                    filtersSection.classList.remove('expanded');
+                    filtersSection.classList.add('collapsed');
+                }
+            }
+            
+            function initializeFilters() {
+                // Load filter options
+                loadFilterOptions();
+            }
+            
+            function loadFilterOptions() {
+                // This would be populated from API calls
+                // For now, we'll use placeholder data
+            }
+            
+            function applyFilters() {
+                loadOrders();
+            }
+            
+            function resetFilters() {
+                document.getElementById('filter-period').value = '';
+                document.getElementById('filter-driver').value = '';
+                document.getElementById('filter-status').value = '';
+                document.getElementById('filter-price-min').value = '';
+                document.getElementById('filter-price-max').value = '';
+                document.getElementById('filter-from').value = '';
+                document.getElementById('filter-to').value = '';
+                document.getElementById('filter-cancellation').value = '';
+                loadOrders();
+            }
+            
+            function loadOrders() {
+                fetch('/api/orders')
+                    .then(response => response.json())
+                    .then(data => {
+                        const tbody = document.getElementById('orders-table');
+                        const countElement = document.getElementById('orders-count');
+                        
+                        countElement.textContent = `${data.recent_orders.length} заказов`;
+                        
+                        const getStatusBadge = (status) => {
+                            const statusConfig = {
+                                'requested': { color: 'yellow', text: 'Ожидает', icon: 'clock' },
+                                'accepted': { color: 'blue', text: 'Принят', icon: 'check-circle' },
+                                'in_progress': { color: 'purple', text: 'В пути', icon: 'car' },
+                                'completed': { color: 'green', text: 'Завершён', icon: 'check-circle-2' },
+                                'cancelled': { color: 'red', text: 'Отменён', icon: 'x-circle' },
+                                'cancelled_by_passenger': { color: 'orange', text: 'Отм. пассажиром', icon: 'user-x' },
+                                'cancelled_by_driver': { color: 'red', text: 'Отм. водителем', icon: 'steering-wheel' },
+                                'expired': { color: 'gray', text: 'Авто-отмена', icon: 'hourglass' }
+                            };
+                            
+                            const config = statusConfig[status] || { color: 'gray', text: status, icon: 'help-circle' };
+                            
+                            return `
+                                <span class="inline-flex items-center gap-1 bg-${config.color}-100 text-${config.color}-700 px-2 py-1 rounded-full text-xs font-medium">
+                                    <i data-lucide="${config.icon}" class="w-3 h-3"></i>
+                                    ${config.text}
+                                </span>
+                            `;
+                        };
+                        
+                        tbody.innerHTML = data.recent_orders.map(o => {
+                            const driverDisplay = o.driver_id ?
+                                (o.driver_name + (o.license_plate ? ` (${o.license_plate})` : '')) :
+                                '—';
+                                
+                            return `
+                                <tr class="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                                    <td class="py-4">
+                                        <div class="font-mono text-sm text-gray-900 font-medium">#${o.order_id}</div>
+                                    </td>
+                                    <td class="py-4">
+                                        <div class="font-medium text-gray-900">${o.passenger_id}</div>
+                                    </td>
+                                    <td class="py-4">
+                                        <div class="text-gray-600">${driverDisplay}</div>
+                                    </td>
+                                    <td class="py-4">
+                                        <div class="text-gray-600 max-w-xs truncate">${o.from_location || '—'}</div>
+                                    </td>
+                                    <td class="py-4">
+                                        <div class="text-gray-600 max-w-xs truncate">${o.to_location || '—'}</div>
+                                    </td>
+                                    <td class="py-4">
+                                        ${getStatusBadge(o.status)}
+                                    </td>
+                                    <td class="py-4 text-right">
+                                        <div class="font-bold text-green-600">${o.price ? o.price.toFixed(2) + ' ₽' : '—'}</div>
+                                    </td>
+                                    <td class="py-4">
+                                        <div class="text-sm text-gray-500">${new Date(o.created_at).toLocaleString('ru-RU')}</div>
+                                    </td>
+                                    <td class="py-4">
+                                        <div class="text-sm text-gray-500 max-w-xs truncate">${o.cancellation_reason || '—'}</div>
+                                    </td>
+                                    <td class="py-4 text-right">
+                                        ${['requested', 'accepted', 'in_progress'].includes(o.status) ?
+                                            `<button onclick="cancelOrder(${o.order_id})" class="inline-flex items-center gap-1 bg-red-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-600 transition-colors">
+                                                <i data-lucide="x-circle" class="w-4 h-4"></i>
+                                                Отменить
+                                            </button>` : ''
+                                        }
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('');
+                        lucide.createIcons();
+                    });
+            }
+        </script>
+        '''
+    # Add other tabs similarly...
+    else:
+        return f'<div class="text-center py-8 text-gray-500">Вкладка {tab_name} в разработке</div>'
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(16)
