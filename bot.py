@@ -113,18 +113,24 @@ def init_db():
             FOREIGN KEY (user_id) REFERENCES users (telegram_id)
         )
     ''')
-    # Добавляем начальные данные
-    c.execute("INSERT OR IGNORE INTO tariffs (name, price) VALUES ('Эконом', 100.0), ('Стандарт', 200.0), ('Премиум', 300.0)")
-    c.execute("""
-        INSERT OR IGNORE INTO cancellation_reasons (user_type, reason_text) VALUES 
-        ('driver', 'Долгое ожидание'),
-        ('driver', 'Отказ пассажира'), 
-        ('driver', 'Отказ водителя'),
-        ('passenger', 'Долгое ожидание'),
-        ('passenger', 'Передумал'),
-        ('passenger', 'Не устраивает водитель'),
-        ('passenger', 'Не устраивает автомобиль')
-    """)
+    # Добавляем начальные данные для тарифов только если их нет
+    c.execute("SELECT COUNT(*) FROM tariffs")
+    if c.fetchone()[0] == 0:
+        c.execute("INSERT INTO tariffs (name, price) VALUES ('Эконом', 100.0), ('Стандарт', 200.0), ('Премиум', 300.0)")
+    
+    # Добавляем начальные данные для причин отмены только если их нет
+    c.execute("SELECT COUNT(*) FROM cancellation_reasons")
+    if c.fetchone()[0] == 0:
+        c.execute("""
+            INSERT INTO cancellation_reasons (user_type, reason_text) VALUES 
+            ('driver', 'Долгое ожидание'),
+            ('driver', 'Отказ пассажира'), 
+            ('driver', 'Отказ водителя'),
+            ('passenger', 'Долгое ожидание'),
+            ('passenger', 'Передумал'),
+            ('passenger', 'Не устраивает водитель'),
+            ('passenger', 'Не устраивает автомобиль')
+        """)
     conn.commit()
     return conn
 
