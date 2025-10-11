@@ -26,7 +26,7 @@ from db_utils import (
 DB = init_db()
 
 # Конфигурация
-BOT_TOKEN = os.getenv("BOT_TOKEN", "8297146262:AAG72LEJM2xVds5KDEoB0dJb52iwz8W4_qw")
+BOT_TOKEN = os.getenv("BOT_TOKEN", "your_bot_token")
 ORDER_TIMEOUT = 10  # минут
 
 ACTIVE_ORDER_MESSAGES = {}
